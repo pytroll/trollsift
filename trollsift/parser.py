@@ -1,5 +1,6 @@
 
 import re
+import datetime as dt
 
 def _extract_parsedef(fmt):
     '''Retrieve parse definition from the format string *fmt*.
@@ -28,7 +29,26 @@ def _extract_values( parsedef, stri):
 
 
 def _convert(convdef, stri):
-    return 0.0
+    '''Convert the string *stri* to the given conversion definition
+    *convdef*.
+    '''
+
+    if '%' in convdef:
+        result = dt.datetime.strptime(stri, convdef)
+    elif 'd' in convdef:
+
+        if '>' in convdef:
+            stri = stri.lstrip(convdef[0])
+        elif '<' in convdef:
+            stri = stri.rstrip(convdef[0])
+        elif '^' in convdef:
+            stri = stri.strip(convdef[0])
+        else:
+            pass
+
+        result = int(stri)
+    
+    return result
 
 
 def parse( fmt, stri):
