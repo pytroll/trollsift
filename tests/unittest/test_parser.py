@@ -12,8 +12,11 @@ class TestParser(unittest.TestCase):
         # Run
         result = _extract_parsedef(self.fmt)
         # Assert
-        self.assertItemsEqual(result, ['/somedir/',{'directory':None}, '/hrpt_', {'platform': '4s'}, {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': 'd'}, '.l1b' ] )
+        self.assertItemsEqual(result, ['/somedir/', {'directory':None},
+                                       '/hrpt_', {'platform': '4s'},
+                                       {'platnum': '2s'}, 
+                                      '_', {'time': '%Y%m%d_%H%M'},
+                                       '_', {'orbit': '05d'}, '.l1b' ] )
 
     def test_extract_values(self):
         # Run
