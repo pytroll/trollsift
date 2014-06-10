@@ -71,6 +71,7 @@ def _get_number_from_fmt(fmt):
         return len(("{:"+fmt+"}").format(dt.datetime.now()))
     else:
         # its something else
+        fmt = fmt.lstrip('0')
         return int(re.search('[0-9]+',fmt).group(0))
 
 
