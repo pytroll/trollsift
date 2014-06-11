@@ -68,7 +68,6 @@ def _get_number_from_fmt(fmt):
     """
     if '%' in fmt:
         # its datetime
-        print fmt
         return len(("{0:"+fmt+"}").format(dt.datetime.now()))
     else:
         # its something else
