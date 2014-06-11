@@ -24,10 +24,10 @@ def _extract_parsedef(fmt):
     return parsedef
 
 
-def _extract_values( parsedef, stri):
+def _extract_values(parsedef, stri):
     """
-    Given a parse definition, parsedef,  match and extract
-    key value pairs from input string, stri.
+    Given a parse definition *parsedef* match and extract key value
+    pairs from input string *stri*.
     """
     if len(parsedef) == 0:
         return {}
@@ -98,5 +98,15 @@ def _convert(convdef, stri):
     return result
 
 
-def parse( fmt, stri):
-    pass
+def parse(fmt, stri):
+    '''Parse keys and corresponding values from *stri* using format
+    described in *fmt* string.
+    '''
+
+    parsedef = _extract_parsedef(fmt)
+    keyvals = _extract_values(parsedef, stri)    
+
+    for key in keyvals.keys():
+        keyvals[key] = _convert(keyvals[key])
+
+    return keyvals
