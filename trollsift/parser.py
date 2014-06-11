@@ -68,7 +68,7 @@ def _get_number_from_fmt(fmt):
     """
     if '%' in fmt:
         # its datetime
-        return len(("{:"+fmt+"}").format(dt.datetime.now()))
+        return len(("{0:"+fmt+"}").format(dt.datetime.now()))
     else:
         # its something else
         fmt = fmt.lstrip('0')

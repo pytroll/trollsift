@@ -11,45 +11,59 @@ class TestParser(unittest.TestCase):
         self.string = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b"
         self.string2 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022.l1b"
 
-    def test_extract_keys(self):
+    def test_extract_parsedef(self):
         # Run
         result = _extract_parsedef(self.fmt)
         # Assert
-        self.assertItemsEqual(result, ['/somedir/', {'directory':None},
-                                       '/hrpt_', {'platform': '4s'},
-                                       {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'},
-                                       '_', {'orbit': '05d'}, '.l1b' ] )
-
+        self.assertItemsEqual(result,
+                              ['/somedir/', {'directory':None},
+                               '/hrpt_', {'platform': '4s'},
+                               {'platnum': '2s'}, 
+                               '_', {'time': '%Y%m%d_%H%M'},
+                               '_', {'orbit': '05d'}, '.l1b'])
+        
     def test_extract_values(self):
         # Run
-        parsedef = ['/somedir/',{'directory':None}, '/hrpt_', {'platform': '4s'}, {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': 'd'}, '.l1b' ]
-        result = _extract_values( parsedef, self.string )
+        parsedef = ['/somedir/',{'directory':None}, '/hrpt_',
+                    {'platform': '4s'}, {'platnum': '2s'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_',
+                    {'orbit': 'd'}, '.l1b']
+        result = _extract_values(parsedef, self.string)
         # Assert
-        self.assertDictEqual(result, {'directory':'otherdir', 'platform':'noaa', 'platnum':'16', 'time':'20140210_1004','orbit':'69022'})
+        self.assertDictEqual(result, {'directory':'otherdir',
+                                      'platform':'noaa', 'platnum':'16',
+                                      'time':'20140210_1004','orbit':'69022'})
 
     def test_extract_values_padding(self):
         # Run
-        parsedef = ['/somedir/',{'directory':None}, '/hrpt_', {'platform': '4s'}, {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '05d'}, '.l1b' ]
-        result = _extract_values( parsedef, self.string2 )
+        parsedef = ['/somedir/',{'directory':None}, '/hrpt_',
+                    {'platform': '4s'}, {'platnum': '2s'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '05d'},
+                    '.l1b']
+        result = _extract_values(parsedef, self.string2)
         # Assert
-        self.assertDictEqual(result, {'directory':'otherdir', 'platform':'noaa', 'platnum':'16', 'time':'20140210_1004','orbit':'00022'})
+        self.assertDictEqual(result, {'directory':'otherdir',
+                                      'platform':'noaa', 'platnum':'16',
+                                      'time':'20140210_1004','orbit':'00022'})
 
     def test_extract_values_padding2(self):
         # Run
-        parsedef = ['/somedir/',{'directory':None}, '/hrpt_', {'platform': '4s'}, {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '0>5d'}, '.l1b' ]
+        parsedef = ['/somedir/',{'directory':None}, '/hrpt_',
+                    {'platform': '4s'}, {'platnum': '2s'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_',
+                    {'orbit': '0>5d'}, '.l1b' ]
         result = _extract_values( parsedef, self.string2 )
         # Assert
-        self.assertDictEqual(result, {'directory':'otherdir', 'platform':'noaa', 'platnum':'16', 'time':'20140210_1004','orbit':'00022'})
+        self.assertDictEqual(result, {'directory':'otherdir',
+                                      'platform':'noaa', 'platnum':'16',
+                                      'time':'20140210_1004','orbit':'00022'})
 
     def test_extract_values_fails(self):
         # Run
-        parsedef = ['/somedir/',{'directory':None}, '/hrpt_', {'platform': '4s'}, {'platnum': '2s'}, 
-                                      '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '4d'}, '.l1b' ]
-        self.assertRaises(ValueError, _extract_values, parsedef, self.string )
+        parsedef = ['/somedir/',{'directory':None}, '/hrpt_',
+                    {'platform': '4s'}, {'platnum': '2s'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '4d'}, '.l1b']
+        self.assertRaises(ValueError, _extract_values, parsedef, self.string)
 
     def test_convert_digits(self):
         self.assertEqual(_convert('d','69022'), 69022)
@@ -65,4 +79,19 @@ class TestParser(unittest.TestCase):
             self.assertTrue( key in b )
             self.assertEqual(a[key],b[key])
 
-        self.assertEqual(len(a),len(b))
+        self.assertEqual(len(a), len(b))
+
+    def assertItemsEqual(self, a, b):
+        for i in range(len(a)):
+            if isinstance(a[i], dict):
+                self.assertDictEqual(a[i], b[i])
+            else:
+                self.assertEqual(a[i], b[i])
+        self.assertEqual(len(a), len(b))
+
+def suite():
+    """The suite for test_parser
+    """
+    loader = unittest.TestLoader()
+    mysuite = unittest.TestSuite()
+    mysuite.addTest(loader.loadTestsFromTestCase(TestParser))
