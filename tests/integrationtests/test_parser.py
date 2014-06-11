@@ -11,7 +11,7 @@ class TestParser(unittest.TestCase):
         self.string = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b"
         self.data = {'directory': 'otherdir', 'platform': 'noaa',
                      'platnum': '16',
-                     'time': dt.datetime(2014,02,10,10,4), 'orbit': 69022}
+                     'time': dt.datetime(2014, 2, 10, 10, 4), 'orbit': 69022}
         self.p = Parser(self.fmt)
 
     def test_parse(self):

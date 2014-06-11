@@ -91,7 +91,7 @@ def _extract_values(parsedef, stri):
         else:
             raise ValueError
     else:
-        key = match.keys()[0]
+        key = list(match)[0]
         fmt = match[key]
         if (fmt is None) or (fmt.isalpha()):
             next_match = parsedef[0]
