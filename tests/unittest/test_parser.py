@@ -66,3 +66,10 @@ class TestParser(unittest.TestCase):
             self.assertEqual(a[key],b[key])
 
         self.assertEqual(len(a),len(b))
+
+def suite():
+    """The suite for test_parser
+    """
+    loader = unittest.TestLoader()
+    mysuite = unittest.TestSuite()
+    mysuite.addTest(loader.loadTestsFromTestCase(TestParser))

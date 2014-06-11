@@ -29,7 +29,7 @@ import os
 
 version = imp.load_source('trollsift.version', 'trollsift/version.py')
 
-setup(name="trollduction",
+setup(name="trollsift",
       version=version.__version__,
       description='String parser/formatter',
       author='Panu Lahtinen',
@@ -45,5 +45,5 @@ setup(name="trollduction",
       packages=['trollsift'],
       zip_safe=False,
       install_requires=[],
-      test_suite = 'tests.unittests',
+      test_suite = 'nose.collector',
       )
