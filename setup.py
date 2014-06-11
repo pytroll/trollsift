@@ -6,7 +6,7 @@
 # Author(s):
 
 # Panu Lahtinen <panu.lahtinen@fmi.fi>
-# Hróbjartur Þorsteinsson <hroi@vedur.is>
+# Hróbjartur Thorsteinsson <hroi@vedur.is>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

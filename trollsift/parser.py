@@ -1,6 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2014
+
+# Author(s):
+
+# Panu Lahtinen <panu.lahtinen@fmi.fi>
+# Hróbjartur Thorsteinsson <hroi@vedur.is>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+'''Parser class
+'''
 
 import re
 import datetime as dt
+
+class Parser(object):
+    '''Parser class
+    '''
+
+    def __init__(self, fmt):
+        self.fmt = fmt
+
+    def parse(self, stri):
+        '''Parse keys and corresponding values from *stri* using format
+        described in *fmt* string.
+        '''
+        return parse(self.fmt, stri)
+
+    def compose(self, keyvals):
+        '''Return string composed according to *fmt* string and filled
+        with values with the corresponding keys in *keyvals* dictionary.
+        '''
+        return compose(self.fmt, keyvals)
+
 
 def _extract_parsedef(fmt):
     '''Retrieve parse definition from the format string *fmt*.
@@ -45,7 +91,7 @@ def _extract_values(parsedef, stri):
         else:
             raise ValueError
     else:
-        key = match.keys()[0]
+        key = list(match)[0]
         fmt = match[key]
         if (fmt is None) or (fmt.isalpha()):
             next_match = parsedef[0]
@@ -56,8 +102,8 @@ def _extract_values(parsedef, stri):
             return keyvals
         else:
             # find number of chars
-            n = _get_number_from_fmt(fmt)
-            value = stri[0:n]
+            num = _get_number_from_fmt(fmt)
+            value = stri[0:num]
             stri_next = stri[len(value):]
             keyvals =  _extract_values( parsedef, stri_next )
             keyvals[key] = value
@@ -74,7 +120,7 @@ def _get_number_from_fmt(fmt):
     else:
         # its something else
         fmt = fmt.lstrip('0')
-        return int(re.search('[0-9]+',fmt).group(0))
+        return int(re.search('[0-9]+', fmt).group(0))
 
 
 def _convert(convdef, stri):
@@ -113,3 +159,9 @@ def parse(fmt, stri):
         keyvals[key] = _convert(convdef[key], keyvals[key])
 
     return keyvals
+
+def compose(fmt, keyvals):
+    '''Return string composed according to *fmt* string and filled
+    with values with the corresponding keys in *keyvals* dictionary.
+    '''
+    return fmt.format(**keyvals)

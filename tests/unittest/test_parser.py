@@ -78,8 +78,10 @@ class TestParser(unittest.TestCase):
         # Run
         result = parse(self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
         # Assert
-        self.assertDictEqual(result, {'directory': 'avhrr/2014', 'platform': 'noaa', 'platnum': '19',
-                                      'time': dt.datetime(2014,02,12,14,12), 'orbit':12345})
+        self.assertDictEqual(result, {'directory': 'avhrr/2014',
+                                      'platform': 'noaa', 'platnum': '19',
+                                      'time': dt.datetime(2014, 2, 12, 14, 12),
+                                      'orbit':12345})
 
 
     def assertDictEqual(self, a, b):
