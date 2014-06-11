@@ -74,6 +74,14 @@ class TestParser(unittest.TestCase):
         self.assertEqual(_convert('%Y%m%d_%H%M', '20140210_1004'),
                          dt.datetime(2014, 2, 10, 10, 4))
 
+    def test_parse(self):
+        # Run
+        result = parse(fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
+        # Assert
+        self.assertDictEqual(result, {'directory': 'avhrr/2014', 'platform': 'noaa', 'platnum': '19'
+                                      'time': dt.datetime(2014,02,12,14,12), 'orbit':12345})
+
+
     def assertDictEqual(self, a, b):
         for key in a:
             self.assertTrue( key in b )
