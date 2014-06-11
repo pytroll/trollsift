@@ -7,6 +7,7 @@ def _extract_parsedef(fmt):
     '''
 
     parsedef = []
+    convdef = {}
 
     for part1 in fmt.split('}'):
         for part2 in part1.split('{'):
@@ -14,6 +15,7 @@ def _extract_parsedef(fmt):
                 if ':' in part2:
                     part2 = part2.split(':')
                     parsedef.append({part2[0]: part2[1]})
+                    convdef[part2[0]] = part2[1]
                 else:
                     reg = re.search('(\{'+part2+'\})', fmt)
                     if reg:
@@ -21,7 +23,7 @@ def _extract_parsedef(fmt):
                     else:
                         parsedef.append(part2)
 
-    return parsedef
+    return parsedef, convdef
 
 
 def _extract_values(parsedef, stri):
@@ -94,7 +96,8 @@ def _convert(convdef, stri):
             pass
 
         result = int(stri)
-    
+    else:
+        result = stri
     return result
 
 
@@ -103,10 +106,10 @@ def parse(fmt, stri):
     described in *fmt* string.
     '''
 
-    parsedef = _extract_parsedef(fmt)
+    parsedef, convdef  = _extract_parsedef(fmt)
     keyvals = _extract_values(parsedef, stri)    
 
-    for key in keyvals.keys():
-        keyvals[key] = _convert(keyvals[key])
+    for key in convdef.keys():        
+        keyvals[key] = _convert(convdef[key], keyvals[key])
 
     return keyvals

@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 
-from trollsift.parser import _extract_parsedef, _extract_values, _convert
+from trollsift.parser import _extract_parsedef, _extract_values, _convert, parse
 
 class TestParser(unittest.TestCase):
     
@@ -13,7 +13,7 @@ class TestParser(unittest.TestCase):
 
     def test_extract_parsedef(self):
         # Run
-        result = _extract_parsedef(self.fmt)
+        result,dummy = _extract_parsedef(self.fmt)
         # Assert
         self.assertItemsEqual(result,
                               ['/somedir/', {'directory':None},
@@ -76,9 +76,9 @@ class TestParser(unittest.TestCase):
 
     def test_parse(self):
         # Run
-        result = parse(fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
+        result = parse(self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
         # Assert
-        self.assertDictEqual(result, {'directory': 'avhrr/2014', 'platform': 'noaa', 'platnum': '19'
+        self.assertDictEqual(result, {'directory': 'avhrr/2014', 'platform': 'noaa', 'platnum': '19',
                                       'time': dt.datetime(2014,02,12,14,12), 'orbit':12345})
 
 
