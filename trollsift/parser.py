@@ -27,6 +27,8 @@
 
 import re
 import datetime as dt
+import random
+import string
 
 class Parser(object):
     '''Parser class
@@ -188,5 +190,68 @@ def validate(fmt, stri):
     except ValueError:
         return False
 
-
+def is_one2one(fmt):
+    """
+    Runs a check to evaluate if the format string has a
+    one to one correspondence.  I.e. that successive composing and
+    parsing opperations will result in the original data.
+    In other words, that input data maps to a string,
+    which then maps back to the original data without any change
+    or loss in information.
+    
+    Note: This test only applies to sensible usage of the format string.
+    If string or numeric data is causes overflow, e.g. 
+    if composing "abcd" into {3s}, one to one correspondence will always 
+    be broken in such cases. This off course also applies to precision 
+    losses when using  datetime data.
+    """
+    # create some random data for the fmt.
+    parsedef, convdef =  _extract_parsedef(fmt)
+    data = {}
+    for x in parsedef:
+        try:
+            key = list(x.keys())[0]
+            formt = x[key]
+            # make some data for this key and format
+            if formt and '%' in formt:
+                # some datetime
+                t = dt.datetime.now()
+                # run once through format to limit precision
+                t = parse("{t:"+formt+"}", compose("{t:"+formt+"}",{'t':t}))['t']
+                data[key] = t
+            elif formt and 'd' in formt:
+                # random number (with n sign. figures)
+                if not formt.isalpha():
+                    n = _get_number_from_fmt(formt)
+                else:
+                    # clearly bad
+                    return False
+                data[key] = random.randint(0,99999999999999999)%(10**n)
+            else:
+                # string type
+                if formt is None:
+                    n = 4
+                elif formt.isalnum(): 
+                    n = _get_number_from_fmt(formt)
+                else:
+                    n = 4
+                randstri = ''
+                for x in range(n):
+                    randstri += random.choice(string.ascii_letters)
+                data[key] = randstri
         
+        except AttributeError:
+            pass
+    # run data forward once and back to data
+    stri = compose(fmt,data)
+    data2 = parse(fmt, stri)
+    # check if data2 equal to original data
+    if len(data) != len(data2):
+        return False
+    for key in data:
+        if key not in data2:
+            return False
+        if data2[key] != data[key]:
+            return False
+    # all checks passed, so just return True
+    return True
