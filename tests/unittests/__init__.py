@@ -23,7 +23,7 @@
 """The tests package.
 """
 
-from tests.unittest import test_parser
+from . import test_parser
 import unittest
 import doctest
 

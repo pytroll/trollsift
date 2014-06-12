@@ -6,7 +6,7 @@
 # Author(s):
 
 # Panu Lahtinen <panu.lahtinen@fmi.fi>
-# Hróbjartur Thorsteinsson <hroi@vedur.is>
+# Hróbjartur Thorsteinsson <thorsteinssonh@gmail.com>
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +46,15 @@ class Parser(object):
         with values with the corresponding keys in *keyvals* dictionary.
         '''
         return compose(self.fmt, keyvals)
+
+    def validate(self, stri):
+        """
+        Validates that string *stri* is parsable and therefore complies with
+        this string format definition.  Useful for filtering strings, or to 
+        check if a string if compatible before passing it to the
+        parser function.
+        """
+        return validate(self.fmt, stri)
 
 
 def _extract_parsedef(fmt):
@@ -165,3 +174,19 @@ def compose(fmt, keyvals):
     with values with the corresponding keys in *keyvals* dictionary.
     '''
     return fmt.format(**keyvals)
+
+def validate(fmt, stri):
+    """
+    Validates that string *stri* is parsable and therefore complies with
+    the format string, *fmt*.  Useful for filtering string, or to 
+    check if string if compatible before passing the string to the
+    parser function.
+    """
+    try:
+        parse(fmt, stri)
+        return True
+    except ValueError:
+        return False
+
+
+        

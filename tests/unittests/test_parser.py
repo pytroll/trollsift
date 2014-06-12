@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 
-from trollsift.parser import _extract_parsedef, _extract_values, _convert, parse
+from trollsift.parser import _extract_parsedef, _extract_values, _convert, parse, validate
 
 class TestParser(unittest.TestCase):
     
@@ -83,6 +83,20 @@ class TestParser(unittest.TestCase):
                                       'time': dt.datetime(2014, 2, 12, 14, 12),
                                       'orbit':12345})
 
+    def test_validate(self):
+        # These cases are True
+        self.assertTrue( validate( self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir/avhrr/2014/hrpt_noaa01_19790530_0705_00000.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir/funny-char$dir/hrpt_noaa19_20140212_1412_12345.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir//hrpt_noaa19_20140212_1412_12345.l1b") )
+        # These cases are False
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_1A345.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_2014021_1412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000") )
+        self.assertFalse( validate( self.fmt, "{}/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1b") )
 
     def assertDictEqual(self, a, b):
         for key in a:
