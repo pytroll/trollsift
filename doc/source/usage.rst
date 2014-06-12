@@ -45,7 +45,7 @@ a new file name,
   '/somedir/otherdir/hrpt_noaa16_20120101_0101_69022.l1b'
 
 
-tandalone parse and compose
+standalone parse and compose
 +++++++++++++++++++++++++++++++++++++++++
 
 The parse and compose methods also exist as standalone functions,
