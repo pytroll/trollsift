@@ -49,6 +49,12 @@ class Parser(object):
         '''
         return compose(self.fmt, keyvals)
 
+    def globify(self, keyvals):
+        '''Generate a  string useable with glob.glob()  from format string
+        *fmt* and *keyvals* dictionary.
+        '''
+        return globify(self.fmt, keyvals)
+
     def validate(self, stri):
         """
         Validates that string *stri* is parsable and therefore complies with
@@ -157,6 +163,18 @@ def _convert(convdef, stri):
         result = stri
     return result
 
+def _collect_keyvals_from_parsedef(parsedef):
+    '''Collect dict keys and values from parsedef.
+    '''
+
+    keys, vals = [], []
+
+    for itm in parsedef:
+        if isinstance(itm, dict):
+            keys.append(list(itm.keys())[0])
+            vals.append(list(itm.values())[0])
+
+    return keys, vals
 
 def parse(fmt, stri):
     '''Parse keys and corresponding values from *stri* using format
@@ -175,7 +193,68 @@ def compose(fmt, keyvals):
     '''Return string composed according to *fmt* string and filled
     with values with the corresponding keys in *keyvals* dictionary.
     '''
+
     return fmt.format(**keyvals)
+
+def globify(fmt, keyvals):
+    '''Generate a string useable with glob.glob() from format string
+    *fmt* and *keyvals* dictionary.
+    '''
+
+    parsedef, _ = _extract_parsedef(fmt)
+    all_keys, all_vals = _collect_keyvals_from_parsedef(parsedef)
+    replace_str = ''
+    for key, val in zip(all_keys, all_vals):
+        if key not in list(keyvals.keys()):
+            # replace depending on the format defined in all_vals[key]
+            if val is None:
+                replace_str = '*'
+            elif '%' in val:
+                # calculate the length of datetime
+                val2 = '{:'+val+'}'
+                num = len(val2.format(dt.datetime.now()))
+                replace_str = num * '?'
+            elif not re.search('[0-9]+', val):
+                if 'd' in val:
+                    val2 = val.replace('d', 's')
+                    fmt = fmt.replace(key+':'+val, key+':'+val2)
+                replace_str = '*'
+            else:
+                if 'd' in val:
+                    val2 = val.lstrip('0').replace('d', 's')
+                    fmt = fmt.replace(key+':'+val, key+':'+val2)
+                num = _get_number_from_fmt(val)
+                replace_str = num * '?'
+            keyvals[key] = replace_str
+        else:
+            # Check partial datetime usage
+            if isinstance(keyvals[key], list) or \
+                    isinstance(keyvals[key], tuple):
+                conv_chars = keyvals[key][1]
+            else:
+                continue
+
+            val2 = list(val)
+            prev = 0
+            datet = keyvals[key][0] # assume datetime
+            while True:
+                idx = val.find('%', prev)
+                # Stop if no finds
+                if idx == -1:
+                    break
+                if val[idx+1] not in conv_chars:
+                    tmp = '{:%'+val[idx+1]+'}'
+                    # calculate how many '?' are needed
+                    num = len(tmp.format(datet))
+                    val2[idx:idx+num] = num*'?'
+                prev = idx+1
+            val2 = ''.join(val2)
+            fmt = fmt.replace(key+':'+val, key+':'+val2)
+            keyvals[key] = keyvals[key][0]
+
+    result = compose(fmt, keyvals)
+
+    return result
 
 def validate(fmt, stri):
     """
@@ -255,3 +334,4 @@ def is_one2one(fmt):
             return False
     # all checks passed, so just return True
     return True
+

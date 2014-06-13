@@ -1,7 +1,9 @@
 import unittest
 import datetime as dt
 
-from trollsift.parser import _extract_parsedef, _extract_values, _convert, parse, validate, is_one2one
+from trollsift.parser import _extract_parsedef, _extract_values
+from trollsift.parser import _convert, _collect_keyvals_from_parsedef
+from trollsift.parser import parse, globify, validate, is_one2one
 
 class TestParser(unittest.TestCase):
     
@@ -95,6 +97,62 @@ class TestParser(unittest.TestCase):
                                       'platform': 'noaa', 'platnum': '19',
                                       'time': dt.datetime(2014, 2, 12, 14, 12),
                                       'orbit':12345})
+
+    def test_globify_simple(self):
+        # Run
+        result = globify('{a}_{b}.end', {'a': 'a', 'b': 'b'})
+        # Assert
+        self.assertEqual(result, 'a_b.end')
+
+    def test_globify_known_lengths(self):
+        # Run
+        result = globify('{directory}/{platform:4s}{satnum:2d}/{orbit:05d}',
+                         {'directory': 'otherdir',
+                          'platform': 'noaa'})
+        # Assert
+        self.assertEqual(result, 'otherdir/noaa??/?????')
+        
+    def test_globify_unknown_lengths(self):
+        # Run
+        result = globify('hrpt_{platform_and_num}_' +\
+                             '{date}_{time}_{orbit}.l1b',
+                         {'platform_and_num': 'noaa16'})
+        # Assert
+        self.assertEqual(result, 'hrpt_noaa16_*_*_*.l1b')
+        
+    def test_globify_datetime(self):
+        # Run
+        result = globify('hrpt_{platform}{satnum}_' +\
+                             '{time:%Y%m%d_%H%M}_{orbit}.l1b',
+                         {'platform': 'noaa',
+                          'time': dt.datetime(2014, 2, 10, 12, 12)})
+        # Assert
+        self.assertEqual(result, 'hrpt_noaa*_20140210_1212_*.l1b')
+
+    def test_globify_partial_datetime(self):
+        # Run
+        result = globify('hrpt_{platform:4s}{satnum:2d}_' +\
+                             '{time:%Y%m%d_%H%M}_{orbit}.l1b',
+                         {'platform': 'noaa',
+                          'time': (dt.datetime(2014, 2, 10, 12, 12),
+                                   'Ymd')})
+        # Assert
+        self.assertEqual(result, 'hrpt_noaa??_20140210_????_*.l1b')
+
+    def test_collect_keyvals_from_parsedef(self):
+        # Run
+        keys, vals = _collect_keyvals_from_parsedef(['/somedir/',
+                                                     {'directory':None},
+                                                     '/hrpt_',
+                                                     {'platform': '4s'},
+                                                     {'platnum': '2s'}, '_',
+                                                     {'time': '%Y%m%d_%H%M'},
+                                                     '_', {'orbit': '05d'},
+                                                     '.l1b'])
+        # Assert
+        self.assertEqual(keys, ['directory', 'platform',
+                                'platnum', 'time', 'orbit'])
+        self.assertEqual(vals, [None, '4s', '2s', '%Y%m%d_%H%M', '05d'])
 
     def test_validate(self):
         # These cases are True
