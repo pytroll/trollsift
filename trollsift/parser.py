@@ -266,7 +266,7 @@ def globify(fmt, keyvals):
                 if idx == -1:
                     break
                 if val[idx+1] not in conv_chars:
-                    tmp = '{:%'+val[idx+1]+'}'
+                    tmp = '{0:%'+val[idx+1]+'}'
                     # calculate how many '?' are needed
                     num = len(tmp.format(datet))
                     val2[idx:idx+num] = num*'?'
