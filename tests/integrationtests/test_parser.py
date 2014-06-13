@@ -25,6 +25,14 @@ class TestParser(unittest.TestCase):
         result = self.p.compose(self.data)
         # Assert
         self.assertEqual(result, self.string)
+
+    def test_validate(self):
+        # These cases are True
+        self.assertTrue( self.p.validate( "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b") )
+        # These cases are False
+        self.assertFalse( self.p.validate( "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b") )
+
+
         
     def assertDictEqual(self, a, b):
         for key in a:

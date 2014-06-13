@@ -3,7 +3,7 @@ import datetime as dt
 
 from trollsift.parser import _extract_parsedef, _extract_values
 from trollsift.parser import _convert, _collect_keyvals_from_parsedef
-from trollsift.parser import parse, globify
+from trollsift.parser import parse, globify, validate, is_one2one
 
 class TestParser(unittest.TestCase):
     
@@ -140,6 +140,27 @@ class TestParser(unittest.TestCase):
         self.assertEqual(keys, ['directory', 'platform',
                                 'platnum', 'time', 'orbit'])
         self.assertEqual(vals, [None, '4s', '2s', '%Y%m%d_%H%M', '05d'])
+
+    def test_validate(self):
+        # These cases are True
+        self.assertTrue( validate( self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir/avhrr/2014/hrpt_noaa01_19790530_0705_00000.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir/funny-char$dir/hrpt_noaa19_20140212_1412_12345.l1b") )
+        self.assertTrue( validate( self.fmt, "/somedir//hrpt_noaa19_20140212_1412_12345.l1b") )
+        # These cases are False
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_1A345.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_2014021_1412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1") )
+        self.assertFalse( validate( self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000") )
+        self.assertFalse( validate( self.fmt, "{}/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1b") )
+
+    def test_is_one2one(self):
+        # These cases are True
+        self.assertTrue( is_one2one("/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:5d}.l1b") )
+        # These cases are False
+        self.assertFalse( is_one2one("/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:d}.l1b") )
 
     def assertDictEqual(self, a, b):
         for key in a:
