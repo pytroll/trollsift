@@ -308,7 +308,7 @@ def is_one2one(fmt):
     losses when using  datetime data.
     """
     # create some random data for the fmt.
-    parsedef, convdef =  _extract_parsedef(fmt)
+    parsedef, _ =  _extract_parsedef(fmt)
     data = {}
     for x in parsedef:
         try:

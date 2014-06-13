@@ -25,7 +25,6 @@
 """
 from setuptools import setup
 import imp
-import os
 
 version = imp.load_source('trollsift.version', 'trollsift/version.py')
 
