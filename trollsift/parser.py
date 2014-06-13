@@ -37,7 +37,7 @@ class Parser(object):
     def __init__(self, fmt):
         self.fmt = fmt
 
-    def __str__(self, fmt):
+    def __str__(self):
         return self.fmt
 
     def parse(self, stri):
