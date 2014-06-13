@@ -37,6 +37,9 @@ class Parser(object):
     def __init__(self, fmt):
         self.fmt = fmt
 
+    def __str__(self, fmt):
+        return self.fmt
+
     def parse(self, stri):
         '''Parse keys and corresponding values from *stri* using format
         described in *fmt* string.
@@ -64,6 +67,22 @@ class Parser(object):
         """
         return validate(self.fmt, stri)
 
+    def is_one2one(self):
+        """
+        Runs a check to evaluate if this format string has a
+        one to one correspondence.  I.e. that successive composing and
+        parsing opperations will result in the original data.
+        In other words, that input data maps to a string,
+        which then maps back to the original data without any change
+        or loss in information.
+        
+        Note: This test only applies to sensible usage of the format string.
+        If string or numeric data is causes overflow, e.g. 
+        if composing "abcd" into {3s}, one to one correspondence will always 
+        be broken in such cases. This off course also applies to precision 
+        losses when using  datetime data.
+        """
+        return is_one2one(self.fmt)
 
 def _extract_parsedef(fmt):
     '''Retrieve parse definition from the format string *fmt*.
@@ -111,8 +130,12 @@ def _extract_values(parsedef, stri):
         key = list(match)[0]
         fmt = match[key]
         if (fmt is None) or (fmt.isalpha()):
-            next_match = parsedef[0]
-            value = stri[0:stri.find(next_match)]
+            if len(parsedef)!= 0:
+                next_match = parsedef[0]
+                pos = stri.find(next_match)
+                value = stri[0:pos]
+            else:
+                value = stri
             stri_next = stri[len(value):]
             keyvals =  _extract_values( parsedef, stri_next )
             keyvals[key] = value
@@ -211,7 +234,7 @@ def globify(fmt, keyvals):
                 replace_str = '*'
             elif '%' in val:
                 # calculate the length of datetime
-                val2 = '{:'+val+'}'
+                val2 = '{0:'+val+'}'
                 num = len(val2.format(dt.datetime.now()))
                 replace_str = num * '?'
             elif not re.search('[0-9]+', val):
