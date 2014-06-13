@@ -10,6 +10,7 @@ class TestParser(unittest.TestCase):
             "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
         self.string = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b"
         self.string2 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022.l1b"
+        self.string3 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022"
 
     def test_extract_parsedef(self):
         # Run
@@ -29,6 +30,18 @@ class TestParser(unittest.TestCase):
                     '_', {'time': '%Y%m%d_%H%M'}, '_',
                     {'orbit': 'd'}, '.l1b']
         result = _extract_values(parsedef, self.string)
+        # Assert
+        self.assertDictEqual(result, {'directory':'otherdir',
+                                      'platform':'noaa', 'platnum':'16',
+                                      'time':'20140210_1004','orbit':'69022'})
+
+    def test_extract_values_ends(self):
+        # Run
+        parsedef = ['/somedir/',{'directory':None}, '/hrpt_',
+                    {'platform': '4s'}, {'platnum': '2s'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_',
+                    {'orbit': 'd'}]
+        result = _extract_values(parsedef, self.string3)
         # Assert
         self.assertDictEqual(result, {'directory':'otherdir',
                                       'platform':'noaa', 'platnum':'16',
