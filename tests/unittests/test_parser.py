@@ -86,17 +86,35 @@ class TestParser(unittest.TestCase):
                                       'platform':'noaa', 'platnum':'16',
                                       'time':'20140210_1004','orbit':'69022'})
 
-#    def test_extract_values_ss2pair(self):
-#        # Run
-#        parsedef = [{'directory':None}, '/hrpt_',
-#                    {'platform': 's'}, {'platnum': 's2'}, 
-#                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-#                    {'orbit': 'd'}]
-#        result = _extract_values(parsedef, self.string4)
-#        # Assert
-#        self.assertDictEqual(result, {'directory':'/somedir/otherdir',
-#                                      'platform':'noaa', 'platnum':'16',
-#                                      'time':'20140210_1004','orbit':'69022'})
+    def test_extract_values_ss2pair(self):
+        # Run
+        parsedef = [{'directory':None}, '/hrpt_',
+                    {'platform': 's'}, {'platnum': 's2'}, 
+                    '_', {'time': '%Y%m%d_%H%M'}, '_',
+                    {'orbit': 'd'}]
+        result = _extract_values(parsedef, self.string4)
+        # Assert
+        self.assertDictEqual(result, {'directory':'/somedir/otherdir',
+                                      'platform':'noaa', 'platnum':'16',
+                                      'time':'20140210_1004','orbit':'69022'})
+
+    def test_extract_values_ss2pair_end(self):
+        # Run
+        parsedef = [{'directory':None}, '/hrpt_',
+                    {'platform': 's'}, {'platnum': 's2'}]
+        result = _extract_values(parsedef, "/somedir/otherdir/hrpt_noaa16")
+        # Assert
+        self.assertDictEqual(result, {'directory':'/somedir/otherdir',
+                                      'platform':'noaa', 'platnum':'16'})
+
+    def test_extract_values_sdatetimepair_end(self):
+        # Run
+        parsedef = [{'directory':None}, '/hrpt_',
+                    {'platform': 's'}, {'date': '%Y%m%d'}]
+        result = _extract_values(parsedef, "/somedir/otherdir/hrpt_noaa20140212")
+        # Assert
+        self.assertDictEqual(result, {'directory':'/somedir/otherdir',
+                                      'platform':'noaa', 'date':'20140212'})
 
     def test_extract_values_everything(self):
         # Run

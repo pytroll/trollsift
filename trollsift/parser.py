@@ -118,7 +118,7 @@ def _extract_values(parsedef, stri):
 
     match = parsedef.pop(0)
     # we allow ourselves typechecking
-    # in case of this hidden subroutine
+    # in case of this subroutine
     if isinstance(match, str):
         # match
         if stri.find(match) == 0:
@@ -132,8 +132,26 @@ def _extract_values(parsedef, stri):
         if (fmt is None) or (fmt.isalpha()):
             if len(parsedef)!= 0:
                 next_match = parsedef[0]
-                pos = stri.find(next_match)
-                value = stri[0:pos]
+                # next match is string ...
+                if isinstance(next_match, str):
+                    pos = stri.find(next_match)
+                    value = stri[0:pos]
+                # next match is string key ...
+                else:
+                    # pick out segment until string match,
+                    # and parse in reverse,
+                    rev_parsedef = []
+                    for x in parsedef:
+                        if isinstance(x, str):
+                            break
+                        rev_parsedef.insert(0,x)
+                    rev_parsedef = rev_parsedef + [match]
+                    if isinstance(x, str):
+                        rev_stri = stri[:stri.find(x)][::-1]
+                    else:
+                        rev_stri = stri[::-1]
+                    # parse reversely and pick out value
+                    value =  _extract_values(rev_parsedef, rev_stri)[key][::-1]
             else:
                 value = stri
             stri_next = stri[len(value):]
