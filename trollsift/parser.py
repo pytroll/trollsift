@@ -52,7 +52,7 @@ class Parser(object):
         '''
         return compose(self.fmt, keyvals)
 
-    def globify(self, keyvals):
+    def globify(self, keyvals = None):
         '''Generate a  string useable with glob.glob()  from format string
         *fmt* and *keyvals* dictionary.
         '''
@@ -298,9 +298,6 @@ def globify(fmt, keyvals=None):
             fmt = fmt.replace(key+':'+val, key+':'+val2)
             keyvals[key] = keyvals[key][0]
 
-
-    print keyvals
-    print fmt
     result = compose(fmt, keyvals)
 
     return result
@@ -333,8 +330,23 @@ def is_one2one(fmt):
     be broken in such cases. This off course also applies to precision 
     losses when using  datetime data.
     """
-    # create some random data for the fmt.
+    # look for some bad patterns
     parsedef, _ =  _extract_parsedef(fmt)
+    free_size_start = False
+    for x in parsedef:
+        # encapsulatin free size keys, 
+        # e.g. {:s}{:s} or {:s}{:4s}{:d}
+        if not isinstance(x, str):
+            pattern = list(x.values())[0]
+            if (pattern is None) or (pattern == "s") or (pattern == "d"):
+                if free_size_start:
+                    return False
+                else:
+                    free_size_start = True
+        else:
+            free_size_start = False
+
+    # finally try some data, create some random data for the fmt.
     data = {}
     for x in parsedef:
         try:
@@ -370,6 +382,7 @@ def is_one2one(fmt):
         
         except AttributeError:
             pass
+
     # run data forward once and back to data
     stri = compose(fmt,data)
     data2 = parse(fmt, stri)
