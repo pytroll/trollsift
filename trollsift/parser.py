@@ -237,10 +237,13 @@ def compose(fmt, keyvals):
 
     return fmt.format(**keyvals)
 
-def globify(fmt, keyvals):
+def globify(fmt, keyvals=None):
     '''Generate a string useable with glob.glob() from format string
     *fmt* and *keyvals* dictionary.
     '''
+
+    if keyvals is None:
+        keyvals = {}
 
     parsedef, _ = _extract_parsedef(fmt)
     all_keys, all_vals = _collect_keyvals_from_parsedef(parsedef)
@@ -255,6 +258,7 @@ def globify(fmt, keyvals):
                 val2 = '{0:'+val+'}'
                 num = len(val2.format(dt.datetime.now()))
                 replace_str = num * '?'
+                fmt = fmt.replace(key+':'+val, key)
             elif not re.search('[0-9]+', val):
                 if 'd' in val:
                     val2 = val.replace('d', 's')
@@ -293,6 +297,9 @@ def globify(fmt, keyvals):
             fmt = fmt.replace(key+':'+val, key+':'+val2)
             keyvals[key] = keyvals[key][0]
 
+
+    print keyvals
+    print fmt
     result = compose(fmt, keyvals)
 
     return result

@@ -166,6 +166,18 @@ class TestParser(unittest.TestCase):
         # Assert
         self.assertEqual(result, 'a_b.end')
 
+    def test_globify_empty(self):
+        # Run
+        result = globify('{a}_{b:4d}.end', {})
+        # Assert
+        self.assertEqual(result, '*_????.end')
+
+    def test_globify_noarg(self):
+        # Run
+        result = globify('{a}_{b:4d}.end')
+        # Assert
+        self.assertEqual(result, '*_????.end')
+
     def test_globify_known_lengths(self):
         # Run
         result = globify('{directory}/{platform:4s}{satnum:2d}/{orbit:05d}',
@@ -200,6 +212,16 @@ class TestParser(unittest.TestCase):
                                    'Ymd')})
         # Assert
         self.assertEqual(result, 'hrpt_noaa??_20140210_????_*.l1b')
+
+    def test_globify_datetime_nosub(self):
+        # Run
+        result = globify('hrpt_{platform:4s}{satnum:2d}_' +\
+                             '{time:%Y%m%d_%H%M}_{orbit}.l1b',
+                         {'platform': 'noaa'})
+
+        # Assert
+        self.assertEqual(result, 'hrpt_noaa??_?????????????_*.l1b')
+
 
     def test_collect_keyvals_from_parsedef(self):
         # Run
