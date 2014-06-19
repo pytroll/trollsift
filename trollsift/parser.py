@@ -141,6 +141,7 @@ def _extract_values(parsedef, stri):
                     # pick out segment until string match,
                     # and parse in reverse,
                     rev_parsedef = []
+                    x = ''
                     for x in parsedef:
                         if isinstance(x, str):
                             break
