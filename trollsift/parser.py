@@ -30,7 +30,9 @@ import datetime as dt
 import random
 import string
 
+
 class Parser(object):
+
     '''Parser class
     '''
 
@@ -52,7 +54,7 @@ class Parser(object):
         '''
         return compose(self.fmt, keyvals)
 
-    def globify(self, keyvals = None):
+    def globify(self, keyvals=None):
         '''Generate a  string useable with glob.glob()  from format string
         *fmt* and *keyvals* dictionary.
         '''
@@ -75,7 +77,7 @@ class Parser(object):
         In other words, that input data maps to a string,
         which then maps back to the original data without any change
         or loss in information.
-        
+
         Note: This test only applies to sensible usage of the format string.
         If string or numeric data is causes overflow, e.g. 
         if composing "abcd" into {3s}, one to one correspondence will always 
@@ -83,6 +85,7 @@ class Parser(object):
         losses when using  datetime data.
         """
         return is_one2one(self.fmt)
+
 
 def _extract_parsedef(fmt):
     '''Retrieve parse definition from the format string *fmt*.
@@ -99,7 +102,7 @@ def _extract_parsedef(fmt):
                     parsedef.append({part2[0]: part2[1]})
                     convdef[part2[0]] = part2[1]
                 else:
-                    reg = re.search('(\{'+part2+'\})', fmt)
+                    reg = re.search('(\{' + part2 + '\})', fmt)
                     if reg:
                         parsedef.append({part2: None})
                     else:
@@ -123,14 +126,25 @@ def _extract_values(parsedef, stri):
         # match
         if stri.find(match) == 0:
             stri_next = stri[len(match):]
-            return _extract_values( parsedef, stri_next )
+            return _extract_values(parsedef, stri_next)
         else:
             raise ValueError
     else:
         key = list(match)[0]
         fmt = match[key]
-        if (fmt is None) or (fmt.isalpha()):
-            if len(parsedef)!= 0:
+        if ((fmt is None) or (fmt.isalpha()) or
+                "%f" in fmt or
+                "%a" in fmt or
+                "%A" in fmt or
+                "%b" in fmt or
+                "%B" in fmt or
+                "%z" in fmt or
+                "%Z" in fmt or
+                "%p" in fmt or
+                "%c" in fmt or
+                "%x" in fmt or
+                "%x" in fmt):
+            if len(parsedef) != 0:
                 next_match = parsedef[0]
                 # next match is string ...
                 if isinstance(next_match, str):
@@ -145,18 +159,18 @@ def _extract_values(parsedef, stri):
                     for x in parsedef:
                         if isinstance(x, str):
                             break
-                        rev_parsedef.insert(0,x)
+                        rev_parsedef.insert(0, x)
                     rev_parsedef = rev_parsedef + [match]
                     if isinstance(x, str):
                         rev_stri = stri[:stri.find(x)][::-1]
                     else:
                         rev_stri = stri[::-1]
                     # parse reversely and pick out value
-                    value =  _extract_values(rev_parsedef, rev_stri)[key][::-1]
+                    value = _extract_values(rev_parsedef, rev_stri)[key][::-1]
             else:
                 value = stri
             stri_next = stri[len(value):]
-            keyvals =  _extract_values( parsedef, stri_next )
+            keyvals = _extract_values(parsedef, stri_next)
             keyvals[key] = value
             return keyvals
         else:
@@ -164,9 +178,10 @@ def _extract_values(parsedef, stri):
             num = _get_number_from_fmt(fmt)
             value = stri[0:num]
             stri_next = stri[len(value):]
-            keyvals =  _extract_values( parsedef, stri_next )
+            keyvals = _extract_values(parsedef, stri_next)
             keyvals[key] = value
             return keyvals
+
 
 def _get_number_from_fmt(fmt):
     """
@@ -175,7 +190,7 @@ def _get_number_from_fmt(fmt):
     """
     if '%' in fmt:
         # its datetime
-        return len(("{0:"+fmt+"}").format(dt.datetime.now()))
+        return len(("{0:" + fmt + "}").format(dt.datetime.now()))
     else:
         # its something else
         fmt = fmt.lstrip('0')
@@ -205,6 +220,7 @@ def _convert(convdef, stri):
         result = stri
     return result
 
+
 def _collect_keyvals_from_parsedef(parsedef):
     '''Collect dict keys and values from parsedef.
     '''
@@ -218,18 +234,20 @@ def _collect_keyvals_from_parsedef(parsedef):
 
     return keys, vals
 
+
 def parse(fmt, stri):
     '''Parse keys and corresponding values from *stri* using format
     described in *fmt* string.
     '''
 
-    parsedef, convdef  = _extract_parsedef(fmt)
-    keyvals = _extract_values(parsedef, stri)    
+    parsedef, convdef = _extract_parsedef(fmt)
+    keyvals = _extract_values(parsedef, stri)
 
-    for key in convdef.keys():        
+    for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 
     return keyvals
+
 
 def compose(fmt, keyvals):
     '''Return string composed according to *fmt* string and filled
@@ -237,6 +255,35 @@ def compose(fmt, keyvals):
     '''
 
     return fmt.format(**keyvals)
+
+
+dt_fmt = {
+    "%a": "*",
+    "%A": "*",
+    "%w": "?",
+    "%d": "??",
+    "%b": "*",
+    "%B": "*",
+    "%m": "??",
+    "%y": "??",
+    "%Y": "????",
+    "%H": "??",
+    "%I": "??",
+    "%p": "*",
+    "%M": "??",
+    "%S": "??",
+    "%f": "*",
+    "%z": "*",
+    "%Z": "*",
+    "%j": "???",
+    "%U": "??",
+    "%W": "??",
+    "%c": "*",
+    "%x": "*",
+    "%X": "*",
+    "%%": "?"
+}
+
 
 def globify(fmt, keyvals=None):
     '''Generate a string useable with glob.glob() from format string
@@ -256,19 +303,19 @@ def globify(fmt, keyvals=None):
                 replace_str = '*'
             elif '%' in val:
                 # calculate the length of datetime
-                val2 = '{0:'+val+'}'
-                num = len(val2.format(dt.datetime.now()))
-                replace_str = num * '?'
-                fmt = fmt.replace(key+':'+val, key)
+                replace_str = val
+                for fmt_key, fmt_val in dt_fmt.items():
+                    replace_str = replace_str.replace(fmt_key, fmt_val)
+                fmt = fmt.replace(key + ':' + val, key)
             elif not re.search('[0-9]+', val):
                 if 'd' in val:
                     val2 = val.replace('d', 's')
-                    fmt = fmt.replace(key+':'+val, key+':'+val2)
+                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
                 replace_str = '*'
             else:
                 if 'd' in val:
                     val2 = val.lstrip('0').replace('d', 's')
-                    fmt = fmt.replace(key+':'+val, key+':'+val2)
+                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
                 num = _get_number_from_fmt(val)
                 replace_str = num * '?'
             keyvals[key] = replace_str
@@ -282,25 +329,26 @@ def globify(fmt, keyvals=None):
 
             val2 = list(val)
             prev = 0
-            datet = keyvals[key][0] # assume datetime
+            datet = keyvals[key][0]  # assume datetime
             while True:
                 idx = val.find('%', prev)
                 # Stop if no finds
                 if idx == -1:
                     break
-                if val[idx+1] not in conv_chars:
-                    tmp = '{0:%'+val[idx+1]+'}'
+                if val[idx + 1] not in conv_chars:
+                    tmp = '{0:%' + val[idx + 1] + '}'
                     # calculate how many '?' are needed
                     num = len(tmp.format(datet))
-                    val2[idx:idx+num] = num*'?'
-                prev = idx+1
+                    val2[idx:idx + num] = num * '?'
+                prev = idx + 1
             val2 = ''.join(val2)
-            fmt = fmt.replace(key+':'+val, key+':'+val2)
+            fmt = fmt.replace(key + ':' + val, key + ':' + val2)
             keyvals[key] = keyvals[key][0]
 
     result = compose(fmt, keyvals)
 
     return result
+
 
 def validate(fmt, stri):
     """
@@ -315,6 +363,7 @@ def validate(fmt, stri):
     except ValueError:
         return False
 
+
 def is_one2one(fmt):
     """
     Runs a check to evaluate if the format string has a
@@ -323,7 +372,7 @@ def is_one2one(fmt):
     In other words, that input data maps to a string,
     which then maps back to the original data without any change
     or loss in information.
-    
+
     Note: This test only applies to sensible usage of the format string.
     If string or numeric data is causes overflow, e.g. 
     if composing "abcd" into {3s}, one to one correspondence will always 
@@ -331,10 +380,10 @@ def is_one2one(fmt):
     losses when using  datetime data.
     """
     # look for some bad patterns
-    parsedef, _ =  _extract_parsedef(fmt)
+    parsedef, _ = _extract_parsedef(fmt)
     free_size_start = False
     for x in parsedef:
-        # encapsulatin free size keys, 
+        # encapsulatin free size keys,
         # e.g. {:s}{:s} or {:s}{:4s}{:d}
         if not isinstance(x, str):
             pattern = list(x.values())[0]
@@ -357,7 +406,8 @@ def is_one2one(fmt):
                 # some datetime
                 t = dt.datetime.now()
                 # run once through format to limit precision
-                t = parse("{t:"+formt+"}", compose("{t:"+formt+"}",{'t':t}))['t']
+                t = parse(
+                    "{t:" + formt + "}", compose("{t:" + formt + "}", {'t': t}))['t']
                 data[key] = t
             elif formt and 'd' in formt:
                 # random number (with n sign. figures)
@@ -366,12 +416,12 @@ def is_one2one(fmt):
                 else:
                     # clearly bad
                     return False
-                data[key] = random.randint(0,99999999999999999)%(10**n)
+                data[key] = random.randint(0, 99999999999999999) % (10 ** n)
             else:
                 # string type
                 if formt is None:
                     n = 4
-                elif formt.isalnum(): 
+                elif formt.isalnum():
                     n = _get_number_from_fmt(formt)
                 else:
                     n = 4
@@ -379,12 +429,12 @@ def is_one2one(fmt):
                 for x in range(n):
                     randstri += random.choice(string.ascii_letters)
                 data[key] = randstri
-        
+
         except AttributeError:
             pass
 
     # run data forward once and back to data
-    stri = compose(fmt,data)
+    stri = compose(fmt, data)
     data2 = parse(fmt, stri)
     # check if data2 equal to original data
     if len(data) != len(data2):
@@ -396,4 +446,3 @@ def is_one2one(fmt):
             return False
     # all checks passed, so just return True
     return True
-
