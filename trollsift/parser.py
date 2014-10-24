@@ -132,18 +132,9 @@ def _extract_values(parsedef, stri):
     else:
         key = list(match)[0]
         fmt = match[key]
-        if ((fmt is None) or (fmt.isalpha()) or
-                "%f" in fmt or
-                "%a" in fmt or
-                "%A" in fmt or
-                "%b" in fmt or
-                "%B" in fmt or
-                "%z" in fmt or
-                "%Z" in fmt or
-                "%p" in fmt or
-                "%c" in fmt or
-                "%x" in fmt or
-                "%x" in fmt):
+        fmt_list = ["%f", "%a", "%A", "%b", "%B", "%z", "%Z",
+                    "%p", "%c", "%x", "%X"] 
+        if fmt is None or fmt.isalpha() or any([x in fmt for x in fmt_list]):
             if len(parsedef) != 0:
                 next_match = parsedef[0]
                 # next match is string ...
@@ -257,7 +248,7 @@ def compose(fmt, keyvals):
     return fmt.format(**keyvals)
 
 
-dt_fmt = {
+DT_FMT = {
     "%a": "*",
     "%A": "*",
     "%w": "?",
@@ -304,7 +295,7 @@ def globify(fmt, keyvals=None):
             elif '%' in val:
                 # calculate the length of datetime
                 replace_str = val
-                for fmt_key, fmt_val in dt_fmt.items():
+                for fmt_key, fmt_val in DT_FMT.items():
                     replace_str = replace_str.replace(fmt_key, fmt_val)
                 fmt = fmt.replace(key + ':' + val, key)
             elif not re.search('[0-9]+', val):
