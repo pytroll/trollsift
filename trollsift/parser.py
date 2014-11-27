@@ -95,19 +95,20 @@ def _extract_parsedef(fmt):
     convdef = {}
 
     for part1 in fmt.split('}'):
-        for part2 in part1.split('{'):
-            if part2 is not '':
-                if ':' in part2:
-                    part2 = part2.split(':')
-                    parsedef.append({part2[0]: part2[1]})
-                    convdef[part2[0]] = part2[1]
+        part2 = part1.split('{', 1)
+        if part2[0] is not '':
+            parsedef.append(part2[0])
+        if len(part2) > 1 and part2[1] is not '':
+            if ':' in part2[1]:
+                part2 = part2[1].split(':', 1)
+                parsedef.append({part2[0]: part2[1]})
+                convdef[part2[0]] = part2[1]
+            else:
+                reg = re.search('(\{' + part2[1] + '\})', fmt)
+                if reg:
+                    parsedef.append({part2[1]: None})
                 else:
-                    reg = re.search('(\{' + part2 + '\})', fmt)
-                    if reg:
-                        parsedef.append({part2: None})
-                    else:
-                        parsedef.append(part2)
-
+                    parsedef.append(part2[1])
     return parsedef, convdef
 
 
@@ -133,13 +134,19 @@ def _extract_values(parsedef, stri):
         key = list(match)[0]
         fmt = match[key]
         fmt_list = ["%f", "%a", "%A", "%b", "%B", "%z", "%Z",
-                    "%p", "%c", "%x", "%X"] 
+                    "%p", "%c", "%x", "%X"]
         if fmt is None or fmt.isalpha() or any([x in fmt for x in fmt_list]):
             if len(parsedef) != 0:
                 next_match = parsedef[0]
                 # next match is string ...
                 if isinstance(next_match, str):
-                    pos = stri.find(next_match)
+                    try:
+                        count = fmt.count(next_match)
+                    except AttributeError:
+                        count = 0
+                    pos = -1
+                    for dummy in range(count + 1):
+                        pos = stri.find(next_match, pos + 1)
                     value = stri[0:pos]
                 # next match is string key ...
                 else:
@@ -233,7 +240,6 @@ def parse(fmt, stri):
 
     parsedef, convdef = _extract_parsedef(fmt)
     keyvals = _extract_values(parsedef, stri)
-
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 

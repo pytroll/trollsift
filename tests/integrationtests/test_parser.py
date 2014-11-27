@@ -3,8 +3,9 @@ import datetime as dt
 
 from trollsift.parser import Parser
 
+
 class TestParser(unittest.TestCase):
-    
+
     def setUp(self):
         self.fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}" +\
             "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
@@ -28,15 +29,15 @@ class TestParser(unittest.TestCase):
 
     def test_validate(self):
         # These cases are True
-        self.assertTrue( self.p.validate( "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b") )
+        self.assertTrue(
+            self.p.validate("/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b"))
         # These cases are False
-        self.assertFalse( self.p.validate( "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b") )
+        self.assertFalse(
+            self.p.validate("/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b"))
 
-
-        
     def assertDictEqual(self, a, b):
         for key in a:
-            self.assertTrue( key in b )
+            self.assertTrue(key in b)
             self.assertEqual(a[key], b[key])
 
         self.assertEqual(len(a), len(b))
@@ -48,6 +49,7 @@ class TestParser(unittest.TestCase):
             else:
                 self.assertEqual(a[i], b[i])
         self.assertEqual(len(a), len(b))
+
 
 def suite():
     """The suite for test_parser
