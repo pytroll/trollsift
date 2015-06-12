@@ -202,18 +202,32 @@ def _convert(convdef, stri):
 
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
-    elif 'd' in convdef:
+    elif 'd' in convdef or 's' in convdef:
+        try:
+            align = convdef[0]
+            if align in [">", "<", "^"]:
+                pad = " "
+            else:
+                align = convdef[1]
+                if align in [">", "<", "^"]:
+                    pad = convdef[0]
+                else:
+                    align = None
+                    pad = None
+        except IndexError:
+            align = None
+            pad = None
+        if align == '>':
+            stri = stri.lstrip(pad)
+        elif align == '<':
+            stri = stri.rstrip(pad)
+        elif align == '^':
+            stri = stri.strip(pad)
 
-        if '>' in convdef:
-            stri = stri.lstrip(convdef[0])
-        elif '<' in convdef:
-            stri = stri.rstrip(convdef[0])
-        elif '^' in convdef:
-            stri = stri.strip(convdef[0])
+        if 'd' in convdef:
+            result = int(stri)
         else:
-            pass
-
-        result = int(stri)
+            result = stri
     else:
         result = stri
     return result

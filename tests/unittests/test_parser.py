@@ -164,6 +164,16 @@ class TestParser(unittest.TestCase):
                                       'time': dt.datetime(2014, 2, 12, 14, 12),
                                       'orbit': 12345})
 
+    def test_parse_align(self):
+        filepattern="H-000-{hrit_format:4s}__-{platform_name:4s}________-{channel_name:_<9s}-{segment:_<9s}-{start_time:%Y%m%d%H%M}-__"
+        result = parse(filepattern, "H-000-MSG3__-MSG3________-IR_039___-000007___-201506051700-__")
+        self.assertDictEqual(result, {'channel_name': 'IR_039',
+                                      'hrit_format': 'MSG3',
+                                      'platform_name': 'MSG3',
+                                      'segment': '000007',
+                                      'start_time': dt.datetime(2015, 6, 5, 17, 0)})
+
+
     def test_globify_simple(self):
         # Run
         result = globify('{a}_{b}.end', {'a': 'a', 'b': 'b'})
