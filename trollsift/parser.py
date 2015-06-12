@@ -303,7 +303,8 @@ def globify(fmt, keyvals=None):
 
     if keyvals is None:
         keyvals = {}
-
+    else:
+        keyvals = keyvals.copy()
     parsedef, _ = _extract_parsedef(fmt)
     all_keys, all_vals = _collect_keyvals_from_parsedef(parsedef)
     replace_str = ''
