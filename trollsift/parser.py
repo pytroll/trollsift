@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2014
+# Copyright (c) 2014, 2015
 
 # Author(s):
 
@@ -29,6 +29,7 @@ import re
 import datetime as dt
 import random
 import string
+import six
 
 
 class Parser(object):
@@ -123,7 +124,7 @@ def _extract_values(parsedef, stri):
     match = parsedef.pop(0)
     # we allow ourselves typechecking
     # in case of this subroutine
-    if isinstance(match, str):
+    if isinstance(match, (str, six.text_type)):
         # match
         if stri.find(match) == 0:
             stri_next = stri[len(match):]
@@ -139,7 +140,7 @@ def _extract_values(parsedef, stri):
             if len(parsedef) != 0:
                 next_match = parsedef[0]
                 # next match is string ...
-                if isinstance(next_match, str):
+                if isinstance(next_match, (str, six.text_type)):
                     try:
                         count = fmt.count(next_match)
                     except AttributeError:
@@ -155,11 +156,11 @@ def _extract_values(parsedef, stri):
                     rev_parsedef = []
                     x = ''
                     for x in parsedef:
-                        if isinstance(x, str):
+                        if isinstance(x, (str, six.text_type)):
                             break
                         rev_parsedef.insert(0, x)
                     rev_parsedef = rev_parsedef + [match]
-                    if isinstance(x, str):
+                    if isinstance(x, (str, six.text_type)):
                         rev_stri = stri[:stri.find(x)][::-1]
                     else:
                         rev_stri = stri[::-1]
@@ -397,7 +398,7 @@ def is_one2one(fmt):
     for x in parsedef:
         # encapsulatin free size keys,
         # e.g. {:s}{:s} or {:s}{:4s}{:d}
-        if not isinstance(x, str):
+        if not isinstance(x, (str, six.text_type)):
             pattern = list(x.values())[0]
             if (pattern is None) or (pattern == "s") or (pattern == "d"):
                 if free_size_start:
