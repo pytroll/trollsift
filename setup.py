@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2014
+# Copyright (c) 2014, 2015
 
 # Author(s):
 
@@ -41,10 +41,10 @@ setup(name="trollsift",
                    "Programming Language :: Python",
                    "Topic :: Scientific/Engineering"],
       url="https://github.com/pnuu/trollsift",
-      download_url="https://github.com/pnuu/trollsift/tarball/"+version.__version__,
+      download_url="https://github.com/pnuu/trollsift/tarball/" + version.__version__,
       packages=['trollsift'],
       keywords=["string parsing", "string formatting", "pytroll"],
       zip_safe=False,
-      install_requires=[],
-      test_suite = 'nose.collector',
+      install_requires=['six'],
+      test_suite='nose.collector',
       )
