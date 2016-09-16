@@ -21,4 +21,4 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 """Version file.
 """
-__version__ = "v0.1.1"
+__version__ = "v0.2.0"
