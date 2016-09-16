@@ -19,12 +19,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 """Version file.
 """
-
-__major__ = "0"
-__minor__ = "1"
-__patch__ = "1"
-
-__version__ = "v" + ".".join([__major__, __minor__, __patch__])
+__version__ = "v0.1.1"
