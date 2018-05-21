@@ -1,0 +1,4 @@
+include doc/Makefile
+include doc/source/*
+include LICENSE.txt
+include README.rst
