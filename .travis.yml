@@ -28,7 +28,7 @@ install:
 script:
 - coverage run --source=trollsift setup.py test
 after_success:
-- if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then coveralls; fi
+- if [[ $PYTHON_VERSION == 3.6 ]]; then coveralls; fi
 deploy:
   - provider: pypi
     user: dhoese
