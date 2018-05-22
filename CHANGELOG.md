@@ -1,5 +1,6 @@
-###############################################################################
 ## Version v0.2.1 (2018/05/22)
+
+### Issues Closed
 
 * [Issue 3](https://github.com/pytroll/trollsift/issues/3) - Packaging license file ([PR 4](https://github.com/pytroll/trollsift/pull/4))
 
@@ -12,6 +13,7 @@ In this release 1 issues were closed.
 * [PR 4](https://github.com/pytroll/trollsift/pull/4) - Update travis tests and add appveyor tests ([3](https://github.com/pytroll/trollsift/issues/3))
 
 In this release 1 pull request was closed.
+
 
 ## Version v0.2.0 (2017/12/08)
 
