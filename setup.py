@@ -46,5 +46,5 @@ setup(name="trollsift",
       keywords=["string parsing", "string formatting", "pytroll"],
       zip_safe=False,
       install_requires=['six'],
-      test_suite='nose.collector',
+      test_suite='trollsift.tests.suite',
       )
