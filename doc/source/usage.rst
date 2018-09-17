@@ -1,9 +1,3 @@
-
-.. .. sectnum::
-..   :depth: 4
-..   :start: 2
-..   :suffix: .
-
 .. _string-format: https://docs.python.org/2/library/string.html#format-string-syntax
 
 Usage
@@ -44,6 +38,14 @@ a new file name,
   >>> p.compose(data)
   '/somedir/otherdir/hrpt_noaa16_20120101_0101_69022.l1b'
 
+In addition to python's builtin string formatting functionality trollsift also
+provides extra conversion options such as making all characters lowercase:
+
+  >>> my_parser = Parser("{platform_name:l}")
+  >>> my_parser.compose({'platform_name': 'NPP'})
+  'npp'
+
+For all of the options see :class:`~trollsift.parser.StringFormatter`.
 
 standalone parse and compose
 +++++++++++++++++++++++++++++++++++++++++

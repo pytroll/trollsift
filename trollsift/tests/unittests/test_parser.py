@@ -285,6 +285,35 @@ class TestParser(unittest.TestCase):
         self.assertFalse(is_one2one(
             "/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:d}.l1b"))
 
+    def test_compose(self):
+        """Test the compose method's custom conversion options."""
+        from trollsift import compose
+        key_vals = {'a': 'this Is A-Test b_test c test'}
+
+        new_str = compose("{a!c}", key_vals)
+        self.assertEqual(new_str, 'This is a-test b_test c test')
+        new_str = compose("{a!h}", key_vals)
+        self.assertEqual(new_str, 'thisisatestbtestctest')
+        new_str = compose("{a!H}", key_vals)
+        self.assertEqual(new_str, 'THISISATESTBTESTCTEST')
+        new_str = compose("{a!l}", key_vals)
+        self.assertEqual(new_str, 'this is a-test b_test c test')
+        new_str = compose("{a!R}", key_vals)
+        self.assertEqual(new_str, 'thisIsATestbtestctest')
+        new_str = compose("{a!t}", key_vals)
+        self.assertEqual(new_str, 'This Is A-Test B_Test C Test')
+        new_str = compose("{a!u}", key_vals)
+        self.assertEqual(new_str, 'THIS IS A-TEST B_TEST C TEST')
+        # builtin repr
+        new_str = compose("{a!r}", key_vals)
+        self.assertEqual(new_str, '\'this Is A-Test b_test c test\'')
+        # no formatting
+        new_str = compose("{a}", key_vals)
+        self.assertEqual(new_str, 'this Is A-Test b_test c test')
+        # bad formatter
+        self.assertRaises(ValueError, compose, "{a!X}", key_vals)
+        self.assertEqual(new_str, 'this Is A-Test b_test c test')
+
     def assertDictEqual(self, a, b):
         for key in a:
             self.assertTrue(key in b)

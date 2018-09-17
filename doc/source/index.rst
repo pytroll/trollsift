@@ -4,8 +4,8 @@
    contain the root `toctree` directive.
 
 .. meta::
-   description: Trollsift project, modules for formatting, parsing and filtering satellite granule file names
-   keywords: Python, pytroll, format, parse, filter, string
+   :description: Trollsift project, modules for formatting, parsing and filtering satellite granule file names
+   :keywords: Python, pytroll, format, parse, filter, string
 
 Welcome to the trollsift documentation!
 =========================================
@@ -26,7 +26,6 @@ Contents
 
    installation
    usage
-   examples
    api
 
 Indices and tables
