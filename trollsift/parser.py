@@ -22,8 +22,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-'''Parser class
-'''
+"""Parser class
+"""
 
 import re
 import datetime as dt
@@ -33,9 +33,8 @@ import six
 
 
 class Parser(object):
-
-    '''Parser class
-    '''
+    """Parser class
+    """
 
     def __init__(self, fmt):
         self.fmt = fmt
@@ -54,6 +53,8 @@ class Parser(object):
         with values with the corresponding keys in *keyvals* dictionary.
         '''
         return compose(self.fmt, keyvals)
+
+    format = compose
 
     def globify(self, keyvals=None):
         '''Generate a  string useable with glob.glob()  from format string
@@ -86,6 +87,55 @@ class Parser(object):
         losses when using  datetime data.
         """
         return is_one2one(self.fmt)
+
+
+class StringFormatter(string.Formatter):
+    """Custom string formatter class for basic strings.
+
+    This formatter adds a few special conversions for assisting with common
+    trollsift situations like making a parameter lowercase or removing
+    hyphens. The added conversions are listed below and can be used in a
+    format string by prefixing them with an `!` like so:
+
+    >>> fstr = "{!u}_{!l}"
+    >>> formatter = StringFormatter()
+    >>> formatter.format(fstr, "to_upper", "To_LowerCase")
+    "TO_UPPER_to_lowercase"
+
+    - c: Make capitalized version of string (first character upper case, all lowercase after that) by executing the
+         parameter's `.capitalize()` method.
+    - h: A combination of 'R' and 'l'.
+    - H: A combination of 'R' and 'u'.
+    - l: Make all characters lowercase by executing the parameter's `.lower()` method.
+    - R: Remove all separators from the parameter including '-', '_', and ':'.
+    - t: Title case the string by executing the parameter's `.title()` method.
+    - u: Make all characters uppercase by executing the parameter's `.upper()` method.
+
+    """
+    CONV_FUNCS = {
+        'c': 'capitalize',
+        'h': 'lower',
+        'H': 'upper',
+        'l': 'lower',
+        't': 'title',
+        'u': 'upper'
+    }
+
+    def convert_field(self, value, conversion):
+        """Apply conversions mentioned above."""
+        func = self.CONV_FUNCS.get(conversion)
+        if func is not None:
+            value = getattr(value, func)()
+        elif conversion not in ['R']:
+            # default conversion ('r', 's')
+            return super(StringFormatter, self).convert_field(value, conversion)
+
+        if conversion in ['h', 'H', 'R']:
+            value = value.replace('-', '').replace('_', '').replace(':', '').replace(' ', '')
+        return value
+
+
+formatter = StringFormatter()
 
 
 def _extract_parsedef(fmt):
@@ -266,7 +316,7 @@ def compose(fmt, keyvals):
     with values with the corresponding keys in *keyvals* dictionary.
     '''
 
-    return fmt.format(**keyvals)
+    return formatter.format(fmt, **keyvals)
 
 
 DT_FMT = {
@@ -389,7 +439,7 @@ def is_one2one(fmt):
     Note: This test only applies to sensible usage of the format string.
     If string or numeric data is causes overflow, e.g. 
     if composing "abcd" into {3s}, one to one correspondence will always 
-    be broken in such cases. This off course also applies to precision 
+    be broken in such cases. This of course also applies to precision
     losses when using  datetime data.
     """
     # look for some bad patterns
