@@ -139,27 +139,16 @@ formatter = StringFormatter()
 
 
 def _extract_parsedef(fmt):
-    '''Retrieve parse definition from the format string *fmt*.
-    '''
-
+    """Retrieve parse definition from the format string `fmt`."""
     parsedef = []
     convdef = {}
-
-    for part1 in fmt.split('}'):
-        part2 = part1.split('{', 1)
-        if part2[0] is not '':
-            parsedef.append(part2[0])
-        if len(part2) > 1 and part2[1] is not '':
-            if ':' in part2[1]:
-                part2 = part2[1].split(':', 1)
-                parsedef.append({part2[0]: part2[1]})
-                convdef[part2[0]] = part2[1]
-            else:
-                reg = re.search('(\{' + part2[1] + '\})', fmt)
-                if reg:
-                    parsedef.append({part2[1]: None})
-                else:
-                    parsedef.append(part2[1])
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        if literal_text:
+            parsedef.append(literal_text)
+        if field_name is None:
+            continue
+        parsedef.append({field_name: format_spec or None})
+        convdef[field_name] = format_spec
     return parsedef, convdef
 
 
@@ -247,10 +236,7 @@ def _get_number_from_fmt(fmt):
 
 
 def _convert(convdef, stri):
-    '''Convert the string *stri* to the given conversion definition
-    *convdef*.
-    '''
-
+    """Convert the string *stri* to the given conversion definition *convdef*."""
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
     elif 'd' in convdef or 's' in convdef:
@@ -312,10 +298,7 @@ def parse(fmt, stri):
 
 
 def compose(fmt, keyvals):
-    '''Return string composed according to *fmt* string and filled
-    with values with the corresponding keys in *keyvals* dictionary.
-    '''
-
+    """Convert parameters in `keyvals` to a string based on `fmt` string."""
     return formatter.format(fmt, **keyvals)
 
 
@@ -347,70 +330,54 @@ DT_FMT = {
 }
 
 
-def globify(fmt, keyvals=None):
-    '''Generate a string useable with glob.glob() from format string
-    *fmt* and *keyvals* dictionary.
-    '''
+class GlobifyFormatter(string.Formatter):
 
+    # special string to mark a parameter not being specified
+    UNPROVIDED_VALUE = '<trollsift unprovided value>'
+
+    def get_value(self, key, args, kwargs):
+        try:
+            return super(GlobifyFormatter, self).get_value(key, args, kwargs)
+        except (IndexError, KeyError):
+            # assumes that
+            return self.UNPROVIDED_VALUE
+
+    def format_field(self, value, format_spec):
+        if not isinstance(value, (list, tuple)) and value != self.UNPROVIDED_VALUE:
+            return super(GlobifyFormatter, self).format_field(value, format_spec)
+        elif value != self.UNPROVIDED_VALUE:
+            # partial provided date/time fields
+            # specified with a tuple/list of 2 elements
+            # (value, partial format string)
+            value, dt_fmt = value
+            for fmt_letter in dt_fmt:
+                fmt = '%' + fmt_letter
+                format_spec = format_spec.replace(fmt, value.strftime(fmt))
+
+        # Replace format spec with glob patterns (*, ?, etc)
+        if not format_spec:
+            return '*'
+        if '%' in format_spec:
+            replace_str = format_spec
+            for fmt_key, fmt_val in DT_FMT.items():
+                replace_str = replace_str.replace(fmt_key, fmt_val)
+            return replace_str
+        if not re.search('[0-9]+', format_spec):
+            # non-integer type
+            return '*'
+        return '?' * _get_number_from_fmt(format_spec)
+
+
+globify_formatter = GlobifyFormatter()
+
+
+def globify(fmt, keyvals=None):
+    """Generate a string usable with glob.glob() from format string
+    *fmt* and *keyvals* dictionary.
+    """
     if keyvals is None:
         keyvals = {}
-    else:
-        keyvals = keyvals.copy()
-    parsedef, _ = _extract_parsedef(fmt)
-    all_keys, all_vals = _collect_keyvals_from_parsedef(parsedef)
-    replace_str = ''
-    for key, val in zip(all_keys, all_vals):
-        if key not in list(keyvals.keys()):
-            # replace depending on the format defined in all_vals[key]
-            if val is None:
-                replace_str = '*'
-            elif '%' in val:
-                # calculate the length of datetime
-                replace_str = val
-                for fmt_key, fmt_val in DT_FMT.items():
-                    replace_str = replace_str.replace(fmt_key, fmt_val)
-                fmt = fmt.replace(key + ':' + val, key)
-            elif not re.search('[0-9]+', val):
-                if 'd' in val:
-                    val2 = val.replace('d', 's')
-                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-                replace_str = '*'
-            else:
-                if 'd' in val:
-                    val2 = val.lstrip('0').replace('d', 's')
-                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-                num = _get_number_from_fmt(val)
-                replace_str = num * '?'
-            keyvals[key] = replace_str
-        else:
-            # Check partial datetime usage
-            if isinstance(keyvals[key], list) or \
-                    isinstance(keyvals[key], tuple):
-                conv_chars = keyvals[key][1]
-            else:
-                continue
-
-            val2 = list(val)
-            prev = 0
-            datet = keyvals[key][0]  # assume datetime
-            while True:
-                idx = val.find('%', prev)
-                # Stop if no finds
-                if idx == -1:
-                    break
-                if val[idx + 1] not in conv_chars:
-                    tmp = '{0:%' + val[idx + 1] + '}'
-                    # calculate how many '?' are needed
-                    num = len(tmp.format(datet))
-                    val2[idx:idx + num] = num * '?'
-                prev = idx + 1
-            val2 = ''.join(val2)
-            fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-            keyvals[key] = keyvals[key][0]
-
-    result = compose(fmt, keyvals)
-
-    return result
+    return globify_formatter.format(fmt, **keyvals)
 
 
 def validate(fmt, stri):

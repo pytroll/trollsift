@@ -51,10 +51,30 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(a), len(b))
 
 
+class TestParserVIIRSSDR(unittest.TestCase):
+
+    def setUp(self):
+        self.fmt = 'SVI01_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time:%Y%m%d%H%M%S%f}_{source}.h5'
+        self.string = 'SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5'
+        self.data = {'platform_shortname': 'npp',
+                     'start_time': dt.datetime(2012, 2, 25, 18, 1, 24, 500000), 'orbit': 1708,
+                     'end_time': dt.datetime(1900, 1, 1, 18, 2, 48, 700000),
+                     'source': 'noaa_ops',
+                     'creation_time': dt.datetime(2012, 2, 26, 0, 21, 30, 255476)}
+        self.p = Parser(self.fmt)
+
+    def test_parse(self):
+        # Run
+        result = self.p.parse(self.string)
+        # Assert
+        self.assertDictEqual(result, self.data)
+
+
 def suite():
     """The suite for test_parser
     """
     loader = unittest.TestLoader()
     mysuite = unittest.TestSuite()
     mysuite.addTest(loader.loadTestsFromTestCase(TestParser))
+    mysuite.addTest(loader.loadTestsFromTestCase(TestParserVIIRSSDR))
     return mysuite

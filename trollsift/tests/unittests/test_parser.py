@@ -173,7 +173,6 @@ class TestParser(unittest.TestCase):
                                       'segment': '000007',
                                       'start_time': dt.datetime(2015, 6, 5, 17, 0)})
 
-
     def test_globify_simple(self):
         # Run
         result = globify('{a}_{b}.end', {'a': 'a', 'b': 'b'})
