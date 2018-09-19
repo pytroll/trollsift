@@ -51,23 +51,34 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(a), len(b))
 
 
-class TestParserVIIRSSDR(unittest.TestCase):
-
-    def setUp(self):
-        self.fmt = 'SVI01_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time:%Y%m%d%H%M%S%f}_{source}.h5'
-        self.string = 'SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5'
-        self.data = {'platform_shortname': 'npp',
-                     'start_time': dt.datetime(2012, 2, 25, 18, 1, 24, 500000), 'orbit': 1708,
-                     'end_time': dt.datetime(1900, 1, 1, 18, 2, 48, 700000),
-                     'source': 'noaa_ops',
-                     'creation_time': dt.datetime(2012, 2, 26, 0, 21, 30, 255476)}
-        self.p = Parser(self.fmt)
+class TestParserVariousFormats(unittest.TestCase):
 
     def test_parse(self):
-        # Run
-        result = self.p.parse(self.string)
-        # Assert
-        self.assertDictEqual(result, self.data)
+        fmt = 'SVI01_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time:%Y%m%d%H%M%S%f}_{source}.h5'
+        filename = 'SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5'
+        data = {'platform_shortname': 'npp',
+                'start_time': dt.datetime(2012, 2, 25, 18, 1, 24, 500000), 'orbit': 1708,
+                'end_time': dt.datetime(1900, 1, 1, 18, 2, 48, 700000),
+                'source': 'noaa_ops',
+                'creation_time': dt.datetime(2012, 2, 26, 0, 21, 30, 255476)}
+        p = Parser(fmt)
+        result = p.parse(filename)
+        self.assertDictEqual(result, data)
+
+    def test_parse_iasi_l2(self):
+        fmt = "W_XX-EUMETSAT-{reception_location},{instrument},{long_platform_id}+{processing_location}_C_EUMS_{processing_time:%Y%m%d%H%M%S}_IASI_PW3_02_{platform_id}_{start_time:%Y%m%d-%H%M%S}Z_{end_time:%Y%m%d.%H%M%S}Z.hdf"
+        filename = "W_XX-EUMETSAT-kan,iasi,metopb+kan_C_EUMS_20170920103559_IASI_PW3_02_M01_20170920-102217Z_20170920.102912Z.hdf"
+        data = {'reception_location': 'kan',
+                'instrument': 'iasi',
+                'long_platform_id': 'metopb',
+                'processing_location': 'kan',
+                'processing_time': dt.datetime(2017, 9, 20, 10, 35, 59),
+                'platform_id': 'M01',
+                'start_time': dt.datetime(2017, 9, 20, 10, 22, 17),
+                'end_time': dt.datetime(2017, 9, 20, 10, 29, 12)}
+        p = Parser(fmt)
+        result = p.parse(filename)
+        self.assertDictEqual(result, data)
 
 
 def suite():
@@ -76,5 +87,5 @@ def suite():
     loader = unittest.TestLoader()
     mysuite = unittest.TestSuite()
     mysuite.addTest(loader.loadTestsFromTestCase(TestParser))
-    mysuite.addTest(loader.loadTestsFromTestCase(TestParserVIIRSSDR))
+    mysuite.addTest(loader.loadTestsFromTestCase(TestParserVariousFormats))
     return mysuite
