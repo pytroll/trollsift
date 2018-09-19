@@ -2,7 +2,7 @@ import unittest
 import datetime as dt
 
 from trollsift.parser import _extract_parsedef, regex_formatter
-from trollsift.parser import _convert, _collect_keyvals_from_parsedef
+from trollsift.parser import _convert
 from trollsift.parser import parse, globify, validate, is_one2one
 
 
