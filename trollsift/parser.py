@@ -305,18 +305,6 @@ def _convert(convdef, stri):
     return result
 
 
-def _collect_keyvals_from_parsedef(parsedef):
-    """Collect dict keys and values from parsedef."""
-    keys, vals = [], []
-
-    for itm in parsedef:
-        if isinstance(itm, dict):
-            keys.append(list(itm.keys())[0])
-            vals.append(list(itm.values())[0])
-
-    return keys, vals
-
-
 def parse(fmt, stri):
     '''Parse keys and corresponding values from *stri* using format
     described in *fmt* string.

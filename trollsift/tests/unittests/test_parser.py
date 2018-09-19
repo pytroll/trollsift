@@ -197,21 +197,6 @@ class TestParser(unittest.TestCase):
         # Assert
         self.assertEqual(result, 'hrpt_noaa??_????????_????_*.l1b')
 
-    def test_collect_keyvals_from_parsedef(self):
-        # Run
-        keys, vals = _collect_keyvals_from_parsedef(['/somedir/',
-                                                     {'directory': None},
-                                                     '/hrpt_',
-                                                     {'platform': '4s'},
-                                                     {'platnum': '2s'}, '_',
-                                                     {'time': '%Y%m%d_%H%M'},
-                                                     '_', {'orbit': '05d'},
-                                                     '.l1b'])
-        # Assert
-        self.assertEqual(keys, ['directory', 'platform',
-                                'platnum', 'time', 'orbit'])
-        self.assertEqual(vals, [None, '4s', '2s', '%Y%m%d_%H%M', '05d'])
-
     def test_validate(self):
         # These cases are True
         self.assertTrue(
