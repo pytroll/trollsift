@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 
-from trollsift.parser import _extract_parsedef, _extract_values
+from trollsift.parser import _extract_parsedef, regex_formatter
 from trollsift.parser import _convert, _collect_keyvals_from_parsedef
 from trollsift.parser import parse, globify, validate, is_one2one
 
@@ -28,122 +28,73 @@ class TestParser(unittest.TestCase):
                                '_', {'orbit': '05d'}, '.l1b'])
 
     def test_extract_values(self):
-        # Run
-        parsedef = ['/somedir/', {'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}, '.l1b']
-        result = _extract_values(parsedef, self.string)
-        # Assert
+        fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}.l1b"
+        result = regex_formatter.extract_values(fmt, self.string)
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_end(self):
-        # Run
-        parsedef = ['/somedir/', {'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}]
-        result = _extract_values(parsedef, self.string3)
-        # Assert
+        fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
+        result = regex_formatter.extract_values(fmt, self.string3)
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_beginning(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}]
-        result = _extract_values(parsedef, self.string4)
-        # Assert
-        self.assertDictEqual(result, {'directory': '/somedir/otherdir',
-                                      'platform': 'noaa', 'platnum': '16',
-                                      'time': '20140210_1004', 'orbit': '69022'})
-
-    def test_extract_values_beginning(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}]
-        result = _extract_values(parsedef, self.string4)
-        # Assert
+        fmt = "{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
+        result = regex_formatter.extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_s4spair(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': 's'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}]
-        result = _extract_values(parsedef, self.string4)
-        # Assert
+        fmt = "{directory}/hrpt_{platform:4s}{platnum:s}_{time:%Y%m%d_%H%M}_{orbit:d}"
+        result = regex_formatter.extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_ss2pair(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': 's'}, {'platnum': 's2'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': 'd'}]
-        result = _extract_values(parsedef, self.string4)
-        # Assert
+        fmt = "{directory}/hrpt_{platform:s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
+        result = regex_formatter.extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_ss2pair_end(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': 's'}, {'platnum': 's2'}]
-        result = _extract_values(parsedef, "/somedir/otherdir/hrpt_noaa16")
-        # Assert
+        fmt = "{directory}/hrpt_{platform:s}{platnum:2s}"
+        result = regex_formatter.extract_values(fmt, "/somedir/otherdir/hrpt_noaa16")
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16'})
 
     def test_extract_values_sdatetimepair_end(self):
-        # Run
-        parsedef = [{'directory': None}, '/hrpt_',
-                    {'platform': 's'}, {'date': '%Y%m%d'}]
-        result = _extract_values(
-            parsedef, "/somedir/otherdir/hrpt_noaa20140212")
-        # Assert
+        fmt = "{directory}/hrpt_{platform:s}{date:%Y%m%d}"
+        result = regex_formatter.extract_values(fmt, "/somedir/otherdir/hrpt_noaa20140212")
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'date': '20140212'})
 
     def test_extract_values_everything(self):
-        # Run
-        parsedef = [{'everything': None}]
-        result = _extract_values(parsedef, self.string)
-        # Assert
+        fmt = "{everything}"
+        result = regex_formatter.extract_values(fmt, self.string)
         self.assertDictEqual(
             result, {'everything': '/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b'})
 
     def test_extract_values_padding2(self):
-        # Run
-        parsedef = ['/somedir/', {'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_',
-                    {'orbit': '0>5d'}, '.l1b']
-        result = _extract_values(parsedef, self.string2)
+        fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:0>5d}.l1b"
+        # parsedef = ['/somedir/', {'directory': None}, '/hrpt_',
+        #             {'platform': '4s'}, {'platnum': '2s'},
+        #             '_', {'time': '%Y%m%d_%H%M'}, '_',
+        #             {'orbit': '0>5d'}, '.l1b']
+        result = regex_formatter.extract_values(fmt, self.string2)
         # Assert
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '00022'})
 
     def test_extract_values_fails(self):
-        # Run
-        parsedef = ['/somedir/', {'directory': None}, '/hrpt_',
-                    {'platform': '4s'}, {'platnum': '2s'},
-                    '_', {'time': '%Y%m%d_%H%M'}, '_', {'orbit': '4d'}, '.l1b']
-        self.assertRaises(ValueError, _extract_values, parsedef, self.string)
+        fmt = '/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:4d}.l1b'
+        self.assertRaises(ValueError, regex_formatter.extract_values, fmt, self.string)
 
     def test_convert_digits(self):
         self.assertEqual(_convert('d', '69022'), 69022)
@@ -163,6 +114,17 @@ class TestParser(unittest.TestCase):
                                       'platform': 'noaa', 'platnum': '19',
                                       'time': dt.datetime(2014, 2, 12, 14, 12),
                                       'orbit': 12345})
+
+    def test_parse_wildcards(self):
+        # Run
+        result = parse(
+            "hrpt_{platform}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}{ext}",
+            "hrpt_noaa19_20140212_1412_12345.l1b")
+        # Assert
+        self.assertDictEqual(result, {'platform': 'noaa', 'platnum': '19',
+                                      'time': dt.datetime(2014, 2, 12, 14, 12),
+                                      'orbit': 12345,
+                                      'ext': '.l1b'})
 
     def test_parse_align(self):
         filepattern="H-000-{hrit_format:4s}__-{platform_name:4s}________-{channel_name:_<9s}-{segment:_<9s}-{start_time:%Y%m%d%H%M}-__"
