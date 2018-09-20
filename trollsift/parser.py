@@ -258,7 +258,7 @@ regex_formatter = RegexFormatter()
 
 def _get_number_from_fmt(fmt):
     """
-    Helper function for _extract_values, 
+    Helper function for extract_values,
     figures out string length from format string.
     """
     if '%' in fmt:
@@ -305,12 +305,20 @@ def _convert(convdef, stri):
     return result
 
 
-def parse(fmt, stri):
-    '''Parse keys and corresponding values from *stri* using format
-    described in *fmt* string.
-    '''
+def get_convert_dict(fmt):
+    """Retrieve parse definition from the format string `fmt`."""
+    convdef = {}
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        if field_name is None:
+            continue
+        # XXX: Do I need to include 'conversion'?
+        convdef[field_name] = format_spec
+    return convdef
 
-    parsedef, convdef = _extract_parsedef(fmt)
+
+def parse(fmt, stri):
+    """Parse keys and corresponding values from *stri* using format described in *fmt* string."""
+    convdef = get_convert_dict(fmt)
     keyvals = regex_formatter.extract_values(fmt, stri)
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
@@ -415,6 +423,61 @@ def validate(fmt, stri):
         return False
 
 
+def _generate_data_for_format(fmt):
+    """Generate a fake data dictionary to fill in the provided format string."""
+    # finally try some data, create some random data for the fmt.
+    data = {}
+    # keep track of how many "free_size" (wildcard) parameters we have
+    # if we get two in a row then we know the pattern is invalid, meaning
+    # we'll never be able to match the second wildcard field
+    free_size_start = False
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        if literal_text:
+            free_size_start = False
+
+        if not field_name:
+            free_size_start = False
+            continue
+
+        # encapsulating free size keys,
+        # e.g. {:s}{:s} or {:s}{:4s}{:d}
+        if not format_spec or format_spec == "s" or format_spec == "d":
+            if free_size_start:
+                return None
+            else:
+                free_size_start = True
+
+        # make some data for this key and format
+        if format_spec and '%' in format_spec:
+            # some datetime
+            t = dt.datetime.now()
+            # run once through format to limit precision
+            t = parse(
+                "{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {'t': t}))['t']
+            data[field_name] = t
+        elif format_spec and 'd' in format_spec:
+            # random number (with n sign. figures)
+            if not format_spec.isalpha():
+                n = _get_number_from_fmt(format_spec)
+            else:
+                # clearly bad
+                return None
+            data[field_name] = random.randint(0, 99999999999999999) % (10 ** n)
+        else:
+            # string type
+            if format_spec is None:
+                n = 4
+            elif format_spec.isalnum():
+                n = _get_number_from_fmt(format_spec)
+            else:
+                n = 4
+            randstri = ''
+            for x in range(n):
+                randstri += random.choice(string.ascii_letters)
+            data[field_name] = randstri
+    return data
+
+
 def is_one2one(fmt):
     """
     Runs a check to evaluate if the format string has a
@@ -430,59 +493,9 @@ def is_one2one(fmt):
     be broken in such cases. This of course also applies to precision
     losses when using  datetime data.
     """
-    # look for some bad patterns
-    parsedef, _ = _extract_parsedef(fmt)
-    free_size_start = False
-    for x in parsedef:
-        # encapsulatin free size keys,
-        # e.g. {:s}{:s} or {:s}{:4s}{:d}
-        if not isinstance(x, (str, six.text_type)):
-            pattern = list(x.values())[0]
-            if (pattern is None) or (pattern == "s") or (pattern == "d"):
-                if free_size_start:
-                    return False
-                else:
-                    free_size_start = True
-        else:
-            free_size_start = False
-
-    # finally try some data, create some random data for the fmt.
-    data = {}
-    for x in parsedef:
-        try:
-            key = list(x.keys())[0]
-            formt = x[key]
-            # make some data for this key and format
-            if formt and '%' in formt:
-                # some datetime
-                t = dt.datetime.now()
-                # run once through format to limit precision
-                t = parse(
-                    "{t:" + formt + "}", compose("{t:" + formt + "}", {'t': t}))['t']
-                data[key] = t
-            elif formt and 'd' in formt:
-                # random number (with n sign. figures)
-                if not formt.isalpha():
-                    n = _get_number_from_fmt(formt)
-                else:
-                    # clearly bad
-                    return False
-                data[key] = random.randint(0, 99999999999999999) % (10 ** n)
-            else:
-                # string type
-                if formt is None:
-                    n = 4
-                elif formt.isalnum():
-                    n = _get_number_from_fmt(formt)
-                else:
-                    n = 4
-                randstri = ''
-                for x in range(n):
-                    randstri += random.choice(string.ascii_letters)
-                data[key] = randstri
-
-        except AttributeError:
-            pass
+    data = _generate_data_for_format(fmt)
+    if data is None:
+        return False
 
     # run data forward once and back to data
     stri = compose(fmt, data)

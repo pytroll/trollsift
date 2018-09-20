@@ -1,7 +1,7 @@
 import unittest
 import datetime as dt
 
-from trollsift.parser import _extract_parsedef, regex_formatter
+from trollsift.parser import get_convert_dict, regex_formatter
 from trollsift.parser import _convert
 from trollsift.parser import parse, globify, validate, is_one2one
 
@@ -16,16 +16,17 @@ class TestParser(unittest.TestCase):
         self.string3 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
         self.string4 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
 
-    def test_extract_parsedef(self):
+    def test_get_convert_dict(self):
         # Run
-        result, dummy = _extract_parsedef(self.fmt)
+        result = get_convert_dict(self.fmt)
         # Assert
-        self.assertItemsEqual(result,
-                              ['/somedir/', {'directory': None},
-                               '/hrpt_', {'platform': '4s'},
-                               {'platnum': '2s'},
-                               '_', {'time': '%Y%m%d_%H%M'},
-                               '_', {'orbit': '05d'}, '.l1b'])
+        self.assertDictEqual(result, {
+            'directory': '',
+            'platform': '4s',
+            'platnum': '2s',
+            'time': '%Y%m%d_%H%M',
+            'orbit': '05d',
+        })
 
     def test_extract_values(self):
         fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}.l1b"
