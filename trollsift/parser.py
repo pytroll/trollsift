@@ -104,12 +104,12 @@ class StringFormatter(string.Formatter):
 
     - c: Make capitalized version of string (first character upper case, all lowercase after that) by executing the
       parameter's `.capitalize()` method.
-    - h: A combination of 'R' and 'l'.
-    - H: A combination of 'R' and 'u'.
     - l: Make all characters lowercase by executing the parameter's `.lower()` method.
     - R: Remove all separators from the parameter including '-', '_', ' ', and ':'.
     - t: Title case the string by executing the parameter's `.title()` method.
     - u: Make all characters uppercase by executing the parameter's `.upper()` method.
+    - h: A combination of 'R' and 'l'.
+    - H: A combination of 'R' and 'u'.
 
     """
     CONV_FUNCS = {
