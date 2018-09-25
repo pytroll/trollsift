@@ -138,20 +138,6 @@ class StringFormatter(string.Formatter):
 formatter = StringFormatter()
 
 
-def _extract_parsedef(fmt):
-    """Retrieve parse definition from the format string `fmt`."""
-    parsedef = []
-    convdef = {}
-    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
-        if literal_text:
-            parsedef.append(literal_text)
-        if field_name is None:
-            continue
-        parsedef.append({field_name: format_spec or None})
-        convdef[field_name] = format_spec
-    return parsedef, convdef
-
-
 # taken from https://docs.python.org/3/library/re.html#simulating-scanf
 spec_regexes = {
     'c': r'.',
