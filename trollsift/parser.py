@@ -138,103 +138,113 @@ class StringFormatter(string.Formatter):
 formatter = StringFormatter()
 
 
-def _extract_parsedef(fmt):
-    '''Retrieve parse definition from the format string *fmt*.
-    '''
-
-    parsedef = []
-    convdef = {}
-
-    for part1 in fmt.split('}'):
-        part2 = part1.split('{', 1)
-        if part2[0] is not '':
-            parsedef.append(part2[0])
-        if len(part2) > 1 and part2[1] is not '':
-            if ':' in part2[1]:
-                part2 = part2[1].split(':', 1)
-                parsedef.append({part2[0]: part2[1]})
-                convdef[part2[0]] = part2[1]
-            else:
-                reg = re.search('(\{' + part2[1] + '\})', fmt)
-                if reg:
-                    parsedef.append({part2[1]: None})
-                else:
-                    parsedef.append(part2[1])
-    return parsedef, convdef
+# taken from https://docs.python.org/3/library/re.html#simulating-scanf
+spec_regexes = {
+    'c': r'.',
+    'd': r'[-+]?\d',
+    'f': r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?',
+    'i': r'[-+]?(0[xX][\dA-Fa-f]+|0[0-7]*|\d+)',
+    'o': r'[-+]?[0-7]',
+    's': r'\S',
+    'x': r'[-+]?(0[xX])?[\dA-Fa-f]',
+}
+spec_regexes['e'] = spec_regexes['f']
+spec_regexes['E'] = spec_regexes['f']
+spec_regexes['g'] = spec_regexes['f']
+spec_regexes['X'] = spec_regexes['x']
+allow_multiple = ['c', 'd', 'o', 's', 'x', 'X']
 
 
-def _extract_values(parsedef, stri):
-    """
-    Given a parse definition *parsedef* match and extract key value
-    pairs from input string *stri*.
-    """
-    if len(parsedef) == 0:
-        return {}
+class RegexFormatter(string.Formatter):
 
-    match = parsedef.pop(0)
-    # we allow ourselves typechecking
-    # in case of this subroutine
-    if isinstance(match, (str, six.text_type)):
-        # match
-        if stri.find(match) == 0:
-            stri_next = stri[len(match):]
-            return _extract_values(parsedef, stri_next)
+    # special string to mark a parameter not being specified
+    UNPROVIDED_VALUE = '<trollsift unprovided value>'
+    ESCAPE_CHARACTERS = [x for x in string.punctuation if x not in '\\%']
+    ESCAPE_SETS = [(c, '\{}'.format(c)) for c in ESCAPE_CHARACTERS]
+
+    def _escape(self, s):
+        """Escape bad characters for regular expressions.
+
+        Similar to `re.escape` but allows '%' to pass through.
+
+        """
+        for ch, r_ch in self.ESCAPE_SETS:
+            s = s.replace(ch, r_ch)
+        return s
+
+    def parse(self, format_string):
+        parse_ret = super(RegexFormatter, self).parse(format_string)
+        for literal_text, field_name, format_spec, conversion in parse_ret:
+            # the parent class will call parse multiple times moving
+            # 'format_spec' to 'literal_text'. We only escape 'literal_text'
+            # so we don't escape things twice.
+            literal_text = self._escape(literal_text)
+            yield literal_text, field_name, format_spec, conversion
+
+    def get_value(self, key, args, kwargs):
+        try:
+            return super(RegexFormatter, self).get_value(key, args, kwargs)
+        except (IndexError, KeyError):
+            return key, self.UNPROVIDED_VALUE
+
+    def _regex_datetime(self, format_spec):
+        replace_str = format_spec
+        for fmt_key, fmt_val in DT_FMT.items():
+            if fmt_key == '%%':
+                # special case
+                replace_str.replace('%%', '%')
+                continue
+            count = fmt_val.count('?')
+            # either a series of numbers or letters/numbers
+            regex = r'\d{{{:d}}}'.format(count) if count else r'[^ \t\n\r\f\v\-_:]+'
+            replace_str = replace_str.replace(fmt_key, regex)
+        return replace_str
+
+    def regex_field(self, value, format_spec):
+        if value != self.UNPROVIDED_VALUE:
+            return super(RegexFormatter, self).format_field(value, format_spec)
+
+        # Replace format spec with glob patterns (*, ?, etc)
+        if not format_spec:
+            return r'.*'
+        if '%' in format_spec:
+            return self._regex_datetime(format_spec)
+        char_type = spec_regexes[format_spec[-1]]
+        num_match = re.search('[0-9]+', format_spec)
+        num = 0 if num_match is None else int(num_match.group(0))
+        has_multiple = format_spec[-1] in allow_multiple
+        if num == 0 and has_multiple:
+            # don't know the count
+            return r'{}*'.format(char_type)
+        elif num == 0:
+            # floats and other types can't have multiple
+            return char_type
+        elif format_spec[-1] in allow_multiple:
+            return r'{}{{{:d}}}'.format(char_type, num)
         else:
-            raise ValueError
-    else:
-        key = list(match)[0]
-        fmt = match[key]
-        fmt_list = ["%f", "%a", "%A", "%b", "%B", "%z", "%Z",
-                    "%p", "%c", "%x", "%X"]
-        if fmt is None or fmt.isalpha() or any([x in fmt for x in fmt_list]):
-            if len(parsedef) != 0:
-                next_match = parsedef[0]
-                # next match is string ...
-                if isinstance(next_match, (str, six.text_type)):
-                    try:
-                        count = fmt.count(next_match)
-                    except AttributeError:
-                        count = 0
-                    pos = -1
-                    for dummy in range(count + 1):
-                        pos = stri.find(next_match, pos + 1)
-                    value = stri[0:pos]
-                # next match is string key ...
-                else:
-                    # pick out segment until string match,
-                    # and parse in reverse,
-                    rev_parsedef = []
-                    x = ''
-                    for x in parsedef:
-                        if isinstance(x, (str, six.text_type)):
-                            break
-                        rev_parsedef.insert(0, x)
-                    rev_parsedef = rev_parsedef + [match]
-                    if isinstance(x, (str, six.text_type)):
-                        rev_stri = stri[:stri.find(x)][::-1]
-                    else:
-                        rev_stri = stri[::-1]
-                    # parse reversely and pick out value
-                    value = _extract_values(rev_parsedef, rev_stri)[key][::-1]
-            else:
-                value = stri
-            stri_next = stri[len(value):]
-            keyvals = _extract_values(parsedef, stri_next)
-            keyvals[key] = value
-            return keyvals
-        else:
-            # find number of chars
-            num = _get_number_from_fmt(fmt)
-            value = stri[0:num]
-            stri_next = stri[len(value):]
-            keyvals = _extract_values(parsedef, stri_next)
-            keyvals[key] = value
-            return keyvals
+            return r'{}'.format(char_type)
+
+    def format_field(self, value, format_spec):
+        if not isinstance(value, tuple) or value[1] != self.UNPROVIDED_VALUE:
+            return super(RegexFormatter, self).format_field(value, format_spec)
+        field_name, value = value
+        new_value = self.regex_field(value, format_spec)
+        return '(?P<{}>{})'.format(field_name, new_value)
+
+    def extract_values(self, fmt, stri):
+        regex = self.format(fmt)
+        match = re.match(regex, stri)
+        if match is None:
+            raise ValueError("String does not match pattern.")
+        return match.groupdict()
+
+
+regex_formatter = RegexFormatter()
 
 
 def _get_number_from_fmt(fmt):
     """
-    Helper function for _extract_values, 
+    Helper function for extract_values,
     figures out string length from format string.
     """
     if '%' in fmt:
@@ -247,10 +257,7 @@ def _get_number_from_fmt(fmt):
 
 
 def _convert(convdef, stri):
-    '''Convert the string *stri* to the given conversion definition
-    *convdef*.
-    '''
-
+    """Convert the string *stri* to the given conversion definition *convdef*."""
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
     elif 'd' in convdef or 's' in convdef:
@@ -284,27 +291,21 @@ def _convert(convdef, stri):
     return result
 
 
-def _collect_keyvals_from_parsedef(parsedef):
-    '''Collect dict keys and values from parsedef.
-    '''
-
-    keys, vals = [], []
-
-    for itm in parsedef:
-        if isinstance(itm, dict):
-            keys.append(list(itm.keys())[0])
-            vals.append(list(itm.values())[0])
-
-    return keys, vals
+def get_convert_dict(fmt):
+    """Retrieve parse definition from the format string `fmt`."""
+    convdef = {}
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        if field_name is None:
+            continue
+        # XXX: Do I need to include 'conversion'?
+        convdef[field_name] = format_spec
+    return convdef
 
 
 def parse(fmt, stri):
-    '''Parse keys and corresponding values from *stri* using format
-    described in *fmt* string.
-    '''
-
-    parsedef, convdef = _extract_parsedef(fmt)
-    keyvals = _extract_values(parsedef, stri)
+    """Parse keys and corresponding values from *stri* using format described in *fmt* string."""
+    convdef = get_convert_dict(fmt)
+    keyvals = regex_formatter.extract_values(fmt, stri)
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 
@@ -312,10 +313,7 @@ def parse(fmt, stri):
 
 
 def compose(fmt, keyvals):
-    '''Return string composed according to *fmt* string and filled
-    with values with the corresponding keys in *keyvals* dictionary.
-    '''
-
+    """Convert parameters in `keyvals` to a string based on `fmt` string."""
     return formatter.format(fmt, **keyvals)
 
 
@@ -347,70 +345,54 @@ DT_FMT = {
 }
 
 
-def globify(fmt, keyvals=None):
-    '''Generate a string useable with glob.glob() from format string
-    *fmt* and *keyvals* dictionary.
-    '''
+class GlobifyFormatter(string.Formatter):
 
+    # special string to mark a parameter not being specified
+    UNPROVIDED_VALUE = '<trollsift unprovided value>'
+
+    def get_value(self, key, args, kwargs):
+        try:
+            return super(GlobifyFormatter, self).get_value(key, args, kwargs)
+        except (IndexError, KeyError):
+            # assumes that
+            return self.UNPROVIDED_VALUE
+
+    def format_field(self, value, format_spec):
+        if not isinstance(value, (list, tuple)) and value != self.UNPROVIDED_VALUE:
+            return super(GlobifyFormatter, self).format_field(value, format_spec)
+        elif value != self.UNPROVIDED_VALUE:
+            # partial provided date/time fields
+            # specified with a tuple/list of 2 elements
+            # (value, partial format string)
+            value, dt_fmt = value
+            for fmt_letter in dt_fmt:
+                fmt = '%' + fmt_letter
+                format_spec = format_spec.replace(fmt, value.strftime(fmt))
+
+        # Replace format spec with glob patterns (*, ?, etc)
+        if not format_spec:
+            return '*'
+        if '%' in format_spec:
+            replace_str = format_spec
+            for fmt_key, fmt_val in DT_FMT.items():
+                replace_str = replace_str.replace(fmt_key, fmt_val)
+            return replace_str
+        if not re.search('[0-9]+', format_spec):
+            # non-integer type
+            return '*'
+        return '?' * _get_number_from_fmt(format_spec)
+
+
+globify_formatter = GlobifyFormatter()
+
+
+def globify(fmt, keyvals=None):
+    """Generate a string usable with glob.glob() from format string
+    *fmt* and *keyvals* dictionary.
+    """
     if keyvals is None:
         keyvals = {}
-    else:
-        keyvals = keyvals.copy()
-    parsedef, _ = _extract_parsedef(fmt)
-    all_keys, all_vals = _collect_keyvals_from_parsedef(parsedef)
-    replace_str = ''
-    for key, val in zip(all_keys, all_vals):
-        if key not in list(keyvals.keys()):
-            # replace depending on the format defined in all_vals[key]
-            if val is None:
-                replace_str = '*'
-            elif '%' in val:
-                # calculate the length of datetime
-                replace_str = val
-                for fmt_key, fmt_val in DT_FMT.items():
-                    replace_str = replace_str.replace(fmt_key, fmt_val)
-                fmt = fmt.replace(key + ':' + val, key)
-            elif not re.search('[0-9]+', val):
-                if 'd' in val:
-                    val2 = val.replace('d', 's')
-                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-                replace_str = '*'
-            else:
-                if 'd' in val:
-                    val2 = val.lstrip('0').replace('d', 's')
-                    fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-                num = _get_number_from_fmt(val)
-                replace_str = num * '?'
-            keyvals[key] = replace_str
-        else:
-            # Check partial datetime usage
-            if isinstance(keyvals[key], list) or \
-                    isinstance(keyvals[key], tuple):
-                conv_chars = keyvals[key][1]
-            else:
-                continue
-
-            val2 = list(val)
-            prev = 0
-            datet = keyvals[key][0]  # assume datetime
-            while True:
-                idx = val.find('%', prev)
-                # Stop if no finds
-                if idx == -1:
-                    break
-                if val[idx + 1] not in conv_chars:
-                    tmp = '{0:%' + val[idx + 1] + '}'
-                    # calculate how many '?' are needed
-                    num = len(tmp.format(datet))
-                    val2[idx:idx + num] = num * '?'
-                prev = idx + 1
-            val2 = ''.join(val2)
-            fmt = fmt.replace(key + ':' + val, key + ':' + val2)
-            keyvals[key] = keyvals[key][0]
-
-    result = compose(fmt, keyvals)
-
-    return result
+    return globify_formatter.format(fmt, **keyvals)
 
 
 def validate(fmt, stri):
@@ -425,6 +407,61 @@ def validate(fmt, stri):
         return True
     except ValueError:
         return False
+
+
+def _generate_data_for_format(fmt):
+    """Generate a fake data dictionary to fill in the provided format string."""
+    # finally try some data, create some random data for the fmt.
+    data = {}
+    # keep track of how many "free_size" (wildcard) parameters we have
+    # if we get two in a row then we know the pattern is invalid, meaning
+    # we'll never be able to match the second wildcard field
+    free_size_start = False
+    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+        if literal_text:
+            free_size_start = False
+
+        if not field_name:
+            free_size_start = False
+            continue
+
+        # encapsulating free size keys,
+        # e.g. {:s}{:s} or {:s}{:4s}{:d}
+        if not format_spec or format_spec == "s" or format_spec == "d":
+            if free_size_start:
+                return None
+            else:
+                free_size_start = True
+
+        # make some data for this key and format
+        if format_spec and '%' in format_spec:
+            # some datetime
+            t = dt.datetime.now()
+            # run once through format to limit precision
+            t = parse(
+                "{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {'t': t}))['t']
+            data[field_name] = t
+        elif format_spec and 'd' in format_spec:
+            # random number (with n sign. figures)
+            if not format_spec.isalpha():
+                n = _get_number_from_fmt(format_spec)
+            else:
+                # clearly bad
+                return None
+            data[field_name] = random.randint(0, 99999999999999999) % (10 ** n)
+        else:
+            # string type
+            if format_spec is None:
+                n = 4
+            elif format_spec.isalnum():
+                n = _get_number_from_fmt(format_spec)
+            else:
+                n = 4
+            randstri = ''
+            for x in range(n):
+                randstri += random.choice(string.ascii_letters)
+            data[field_name] = randstri
+    return data
 
 
 def is_one2one(fmt):
@@ -442,59 +479,9 @@ def is_one2one(fmt):
     be broken in such cases. This of course also applies to precision
     losses when using  datetime data.
     """
-    # look for some bad patterns
-    parsedef, _ = _extract_parsedef(fmt)
-    free_size_start = False
-    for x in parsedef:
-        # encapsulatin free size keys,
-        # e.g. {:s}{:s} or {:s}{:4s}{:d}
-        if not isinstance(x, (str, six.text_type)):
-            pattern = list(x.values())[0]
-            if (pattern is None) or (pattern == "s") or (pattern == "d"):
-                if free_size_start:
-                    return False
-                else:
-                    free_size_start = True
-        else:
-            free_size_start = False
-
-    # finally try some data, create some random data for the fmt.
-    data = {}
-    for x in parsedef:
-        try:
-            key = list(x.keys())[0]
-            formt = x[key]
-            # make some data for this key and format
-            if formt and '%' in formt:
-                # some datetime
-                t = dt.datetime.now()
-                # run once through format to limit precision
-                t = parse(
-                    "{t:" + formt + "}", compose("{t:" + formt + "}", {'t': t}))['t']
-                data[key] = t
-            elif formt and 'd' in formt:
-                # random number (with n sign. figures)
-                if not formt.isalpha():
-                    n = _get_number_from_fmt(formt)
-                else:
-                    # clearly bad
-                    return False
-                data[key] = random.randint(0, 99999999999999999) % (10 ** n)
-            else:
-                # string type
-                if formt is None:
-                    n = 4
-                elif formt.isalnum():
-                    n = _get_number_from_fmt(formt)
-                else:
-                    n = 4
-                randstri = ''
-                for x in range(n):
-                    randstri += random.choice(string.ascii_letters)
-                data[key] = randstri
-
-        except AttributeError:
-            pass
+    data = _generate_data_for_format(fmt)
+    if data is None:
+        return False
 
     # run data forward once and back to data
     stri = compose(fmt, data)
