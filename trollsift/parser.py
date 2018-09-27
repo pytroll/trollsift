@@ -291,20 +291,16 @@ def _convert(convdef, stri):
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
     elif 'd' in convdef or 's' in convdef:
-        try:
-            align = convdef[0]
-            if align in [">", "<", "^"]:
-                pad = " "
-            else:
-                align = convdef[1]
-                if align in [">", "<", "^"]:
-                    pad = convdef[0]
-                else:
-                    align = None
-                    pad = None
-        except IndexError:
-            align = None
-            pad = None
+        regex_match = fmt_spec_regex.match(convdef)
+        match_dict = regex_match.groupdict() if regex_match else {}
+        align = match_dict.get('align')
+        pad = match_dict.get('fill')
+        if align:
+            # align character is the last one
+            align = align[-1]
+        if align and align in '<>^' and not pad:
+            pad = ' '
+
         if align == '>':
             stri = stri.lstrip(pad)
         elif align == '<':
