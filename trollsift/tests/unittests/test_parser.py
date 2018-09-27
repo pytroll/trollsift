@@ -136,6 +136,36 @@ class TestParser(unittest.TestCase):
                                       'segment': '000007',
                                       'start_time': dt.datetime(2015, 6, 5, 17, 0)})
 
+    def test_parse_digits(self):
+        """Test when a digit field is shorter than the format spec."""
+        result = parse(
+            "hrpt_{platform}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}{ext}",
+            "hrpt_noaa19_20140212_1412_02345.l1b")
+        self.assertDictEqual(result, {'platform': 'noaa', 'platnum': '19',
+                                      'time': dt.datetime(2014, 2, 12, 14, 12),
+                                      'orbit': 2345,
+                                      'ext': '.l1b'})
+        result = parse(
+            "hrpt_{platform}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:5d}{ext}",
+            "hrpt_noaa19_20140212_1412_ 2345.l1b")
+        self.assertDictEqual(result, {'platform': 'noaa', 'platnum': '19',
+                                      'time': dt.datetime(2014, 2, 12, 14, 12),
+                                      'orbit': 2345,
+                                      'ext': '.l1b'})
+        result = parse(
+            "hrpt_{platform}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:_>5d}{ext}",
+            "hrpt_noaa19_20140212_1412___345.l1b")
+        self.assertDictEqual(result, {'platform': 'noaa', 'platnum': '19',
+                                      'time': dt.datetime(2014, 2, 12, 14, 12),
+                                      'orbit': 345,
+                                      'ext': '.l1b'})
+
+    def test_parse_bad_pattern(self):
+        """Test when a digit field is shorter than the format spec."""
+        self.assertRaises(ValueError, parse,
+                          "hrpt_{platform}{platnum:-=2s}_{time:%Y%m%d_%H%M}_{orbit:05d}{ext}",
+                          "hrpt_noaa19_20140212_1412_02345.l1b")
+
     def test_globify_simple(self):
         # Run
         result = globify('{a}_{b}.end', {'a': 'a', 'b': 'b'})
@@ -260,21 +290,6 @@ class TestParser(unittest.TestCase):
         # bad formatter
         self.assertRaises(ValueError, compose, "{a!X}", key_vals)
         self.assertEqual(new_str, 'this Is A-Test b_test c test')
-
-    def assertDictEqual(self, a, b):
-        for key in a:
-            self.assertTrue(key in b)
-            self.assertEqual(a[key], b[key])
-
-        self.assertEqual(len(a), len(b))
-
-    def assertItemsEqual(self, a, b):
-        for i in range(len(a)):
-            if isinstance(a[i], dict):
-                self.assertDictEqual(a[i], b[i])
-            else:
-                self.assertEqual(a[i], b[i])
-        self.assertEqual(len(a), len(b))
 
 
 def suite():
