@@ -153,6 +153,11 @@ spec_regexes['E'] = spec_regexes['f']
 spec_regexes['g'] = spec_regexes['f']
 spec_regexes['X'] = spec_regexes['x']
 allow_multiple = ['c', 'd', 'o', 's', 'x', 'X']
+# format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
+# https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+fmt_spec_regex = re.compile(
+    r'(?P<align>(?P<fill>.)?[<>=^])?(?P<sign>[\+\-\s])?(?P<pound>#)?(?P<zero>0)?(?P<width>\d+)?'
+    r'(?P<comma>,)?(?P<precision>.\d+)?(?P<type>[bcdeEfFgGnosxX%])')
 
 
 class RegexFormatter(string.Formatter):
@@ -200,36 +205,61 @@ class RegexFormatter(string.Formatter):
             replace_str = replace_str.replace(fmt_key, regex)
         return replace_str
 
-    def regex_field(self, value, format_spec):
+    @staticmethod
+    def format_spec_to_regex(field_name, format_spec):
+        """Make an attempt at converting a format spec to a regular expression."""
+        # NOTE: remove escaped backslashes so regex matches
+        regex_match = fmt_spec_regex.match(format_spec.replace('\\', ''))
+        if regex_match is None:
+            raise ValueError("Invalid format specification: '{}'".format(format_spec))
+        regex_dict = regex_match.groupdict()
+        fill = regex_dict['fill']
+        ftype = regex_dict['type']
+        width = regex_dict['width']
+        align = regex_dict['align']
+        # NOTE: does not properly handle `=` alignment
+        if fill is None:
+            if width is not None and width[0] == '0':
+                fill = '0'
+            elif ftype in ['s', 'd']:
+                fill = ' '
+
+        char_type = spec_regexes[ftype]
+        if ftype == 's' and align and align.endswith('='):
+            raise ValueError("Invalid format specification: '{}'".format(format_spec))
+        final_regex = char_type
+        if ftype in allow_multiple and (not width or width == '0'):
+            final_regex += r'*'
+        elif width and width != '0':
+            if not fill:
+                # we know we have exactly this many characters
+                final_regex += r'{{{}}}'.format(int(width))
+            elif fill:
+                # we don't know how many fill characters we have compared to
+                # field characters so just match all characters and sort it out
+                # later during type conversion.
+                final_regex = r'.{{{}}}'.format(int(width))
+            elif ftype in allow_multiple:
+                final_regex += r'*'
+
+        return r'(?P<{}>{})'.format(field_name, final_regex)
+
+    def regex_field(self, field_name, value, format_spec):
         if value != self.UNPROVIDED_VALUE:
             return super(RegexFormatter, self).format_field(value, format_spec)
 
         # Replace format spec with glob patterns (*, ?, etc)
         if not format_spec:
-            return r'.*'
+            return r'(?P<{}>.*)'.format(field_name)
         if '%' in format_spec:
-            return self._regex_datetime(format_spec)
-        char_type = spec_regexes[format_spec[-1]]
-        num_match = re.search('[0-9]+', format_spec)
-        num = 0 if num_match is None else int(num_match.group(0))
-        has_multiple = format_spec[-1] in allow_multiple
-        if num == 0 and has_multiple:
-            # don't know the count
-            return r'{}*'.format(char_type)
-        elif num == 0:
-            # floats and other types can't have multiple
-            return char_type
-        elif format_spec[-1] in allow_multiple:
-            return r'{}{{{:d}}}'.format(char_type, num)
-        else:
-            return r'{}'.format(char_type)
+            return r'(?P<{}>{})'.format(field_name, self._regex_datetime(format_spec))
+        return self.format_spec_to_regex(field_name, format_spec)
 
     def format_field(self, value, format_spec):
         if not isinstance(value, tuple) or value[1] != self.UNPROVIDED_VALUE:
             return super(RegexFormatter, self).format_field(value, format_spec)
         field_name, value = value
-        new_value = self.regex_field(value, format_spec)
-        return '(?P<{}>{})'.format(field_name, new_value)
+        return self.regex_field(field_name, value, format_spec)
 
     def extract_values(self, fmt, stri):
         regex = self.format(fmt)
@@ -484,7 +514,9 @@ def is_one2one(fmt):
         return False
 
     # run data forward once and back to data
+    print(fmt, data)
     stri = compose(fmt, data)
+    print(fmt, stri)
     data2 = parse(fmt, stri)
     # check if data2 equal to original data
     if len(data) != len(data2):
