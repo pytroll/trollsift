@@ -161,6 +161,18 @@ fmt_spec_regex = re.compile(
 
 
 class RegexFormatter(string.Formatter):
+    """String formatter that converts a format string to a regular expression.
+    
+    >>> regex_formatter = RegexFormatter()
+    >>> regex_str = regex_formatter.format('{field_one:5d}_{field_two}')
+
+    Can also be used to extract values from a string given the format spec
+    for that string:
+
+    >>> regex_formatter.extract_values('{field_one:5d}_{field_two}', '12345_sometext')
+    {'field_one': '12345', 'field_two': 'sometext'}
+
+    """
 
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = '<trollsift unprovided value>'
@@ -510,9 +522,7 @@ def is_one2one(fmt):
         return False
 
     # run data forward once and back to data
-    print(fmt, data)
     stri = compose(fmt, data)
-    print(fmt, stri)
     data2 = parse(fmt, stri)
     # check if data2 equal to original data
     if len(data) != len(data2):
