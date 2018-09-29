@@ -1,3 +1,14 @@
+## Version v0.3.0 (2018/09/29)
+
+### Pull Requests Merged
+
+#### Features added
+
+* [PR 6](https://github.com/pytroll/trollsift/pull/6) - Add additional string formatting conversion options
+
+In this release 1 pull request was closed.
+
+
 ## Version v0.2.1 (2018/05/22)
 
 ### Issues Closed
