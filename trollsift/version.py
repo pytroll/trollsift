@@ -21,4 +21,4 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 """Version file.
 """
-__version__ = "0.3.0"
+__version__ = "0.4.0a0.dev0"
