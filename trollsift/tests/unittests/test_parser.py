@@ -4,6 +4,7 @@ import datetime as dt
 from trollsift.parser import get_convert_dict, regex_formatter
 from trollsift.parser import _convert
 from trollsift.parser import parse, globify, validate, is_one2one
+from trollsift.parser import _extract_parsedef
 
 
 class TestParser(unittest.TestCase):
@@ -15,6 +16,17 @@ class TestParser(unittest.TestCase):
         self.string2 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022.l1b"
         self.string3 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
         self.string4 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
+
+    def test_extract_parsedef(self):
+        # Run
+        result, dummy = _extract_parsedef(self.fmt)
+        # Assert
+        self.assertEqual(result,
+                            ['/somedir/', {'directory': None},
+                             '/hrpt_', {'platform': '4s'},
+                             {'platnum': '2s'},
+                             '_', {'time': '%Y%m%d_%H%M'},
+                             '_', {'orbit': '05d'}, '.l1b'])
 
     def test_get_convert_dict(self):
         # Run

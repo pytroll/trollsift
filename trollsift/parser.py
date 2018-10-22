@@ -89,6 +89,31 @@ class Parser(object):
         return is_one2one(self.fmt)
 
 
+def _extract_parsedef(fmt):
+    '''Retrieve parse definition from the format string *fmt*.
+    '''
+
+    parsedef = []
+    convdef = {}
+
+    for part1 in fmt.split('}'):
+        part2 = part1.split('{', 1)
+        if part2[0] is not '':
+            parsedef.append(part2[0])
+        if len(part2) > 1 and part2[1] is not '':
+            if ':' in part2[1]:
+                part2 = part2[1].split(':', 1)
+                parsedef.append({part2[0]: part2[1]})
+                convdef[part2[0]] = part2[1]
+            else:
+                reg = re.search('(\{' + part2[1] + '\})', fmt)
+                if reg:
+                    parsedef.append({part2[1]: None})
+                else:
+                    parsedef.append(part2[1])
+    return parsedef, convdef
+
+
 class StringFormatter(string.Formatter):
     """Custom string formatter class for basic strings.
 
