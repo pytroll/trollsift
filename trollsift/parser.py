@@ -89,9 +89,17 @@ class Parser(object):
         return is_one2one(self.fmt)
 
 
+def extract_parsedef(fmt):
+    """Retrieve parse definiotons from the format string *fmt*."""
+    return _extract_parsedef(fmt)
+
+
 def _extract_parsedef(fmt):
     '''Retrieve parse definition from the format string *fmt*.
     '''
+    import warnings
+    warnings.warn("'_extract_parsedef()' is deprecated, use 'extract_parsedef'"
+                  " instead", DeprecationWarning)
 
     parsedef = []
     convdef = {}
