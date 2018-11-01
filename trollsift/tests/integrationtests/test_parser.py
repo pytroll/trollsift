@@ -111,6 +111,14 @@ class TestParserVariousFormats(unittest.TestCase):
         result = p.parse(filename)
         self.assertDictEqual(result, data)
 
+    def test_parse_duplicate_fields(self):
+        """Test parsing a pattern that has duplicate fields."""
+        fmt = '{version_number:1s}/filename_with_version_number_{version_number:1s}.tif'
+        filename = '1/filename_with_version_number_1.tif'
+        p = Parser(fmt)
+        result = p.parse(filename)
+        self.assertEqual(result['version_number'], '1')
+
 
 def suite():
     """The suite for test_parser
