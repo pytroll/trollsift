@@ -1,4 +1,26 @@
-## Version v0.3.0 (2018/09/29)
+## Version 0.3.1 (2018/11/02)
+
+### Issues Closed
+
+* [Issue 11](https://github.com/pytroll/trollsift/issues/11) - Using the same information in two places in the template is fails with 0.3.0 ([PR 12](https://github.com/pytroll/trollsift/pull/12))
+
+In this release 1 issue was closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 12](https://github.com/pytroll/trollsift/pull/12) - Fix fields being specified multiple times in one pattern ([11](https://github.com/pytroll/trollsift/issues/11))
+
+In this release 1 pull request was closed.
+
+## Version 0.3.0 (2018/09/29)
+
+### Issues Closed
+
+* [Issue 5](https://github.com/pytroll/trollsift/issues/5) - Add custom string formatter for lower/upper support
+
+In this release 1 issue was closed.
 
 ### Pull Requests Merged
 
@@ -9,7 +31,7 @@
 In this release 1 pull request was closed.
 
 
-## Version v0.2.1 (2018/05/22)
+## Version 0.2.1 (2018/05/22)
 
 ### Issues Closed
 
@@ -26,7 +48,7 @@ In this release 1 issues were closed.
 In this release 1 pull request was closed.
 
 
-## Version v0.2.0 (2017/12/08)
+## Version 0.2.0 (2017/12/08)
 
 ### Issues Closed
 
