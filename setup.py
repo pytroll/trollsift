@@ -26,7 +26,6 @@
 from setuptools import setup
 import versioneer
 
-version = imp.load_source('trollsift.version', 'trollsift/version.py')
 README = open('README.rst', 'r').read()
 
 setup(name="trollsift",
