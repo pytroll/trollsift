@@ -179,6 +179,21 @@ class RegexFormatter(string.Formatter):
     ESCAPE_CHARACTERS = [x for x in string.punctuation if x not in '\\%']
     ESCAPE_SETS = [(c, '\{}'.format(c)) for c in ESCAPE_CHARACTERS]
 
+    def __init__(self):
+        # hold on to fields we've seen already so we can reuse their
+        # definitions in the regex
+        self._cached_fields = {}
+        super(RegexFormatter, self).__init__()
+
+    def format(*args, **kwargs):
+        try:
+            # super() doesn't seem to work here
+            ret_val = string.Formatter.format(*args, **kwargs)
+        finally:
+            self = args[0]  # just matching the parent class
+            self._cached_fields.clear()
+        return ret_val
+
     def _escape(self, s):
         """Escape bad characters for regular expressions.
 
@@ -259,6 +274,14 @@ class RegexFormatter(string.Formatter):
     def regex_field(self, field_name, value, format_spec):
         if value != self.UNPROVIDED_VALUE:
             return super(RegexFormatter, self).format_field(value, format_spec)
+
+        if self._cached_fields.get(field_name, format_spec) != format_spec:
+            raise ValueError("Can't specify the same field_name with "
+                             "different formats: {}".format(field_name))
+        elif field_name in self._cached_fields:
+            return r'(?P={})'.format(field_name)
+        else:
+            self._cached_fields[field_name] = format_spec
 
         # Replace format spec with glob patterns (*, ?, etc)
         if not format_spec:
