@@ -26,10 +26,11 @@
 from setuptools import setup
 import versioneer
 
+version = versioneer.get_version()
 README = open('README.rst', 'r').read()
 
 setup(name="trollsift",
-      version=versioneer.get_version(),
+      version=version,
       cmdclass=versioneer.get_cmdclass(),
       description='String parser/formatter',
       long_description=README,
@@ -42,11 +43,11 @@ setup(name="trollsift",
                    "Operating System :: OS Independent",
                    "Programming Language :: Python",
                    "Topic :: Scientific/Engineering"],
-      url="https://github.com/pnuu/trollsift",
-      download_url="https://github.com/pnuu/trollsift/tarball/" + version.__version__,
+      url="https://github.com/pytroll/trollsift",
+      download_url="https://github.com/pytroll/trollsift/tarball/v" + version,
       packages=['trollsift'],
       keywords=["string parsing", "string formatting", "pytroll"],
       zip_safe=False,
-      install_requires=['six'],
+      install_requires=[],
       test_suite='trollsift.tests.suite',
       )

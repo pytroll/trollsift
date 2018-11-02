@@ -29,7 +29,6 @@ import re
 import datetime as dt
 import random
 import string
-import six
 
 
 class Parser(object):
