@@ -2,3 +2,5 @@ include doc/Makefile
 include doc/source/*
 include LICENSE.txt
 include README.rst
+include versioneer.py
+include trollsift/version.py

@@ -24,13 +24,16 @@
 """Setup for trollsift.
 """
 from setuptools import setup
-import imp
+import versioneer
 
 version = imp.load_source('trollsift.version', 'trollsift/version.py')
+README = open('README.rst', 'r').read()
 
 setup(name="trollsift",
-      version=version.__version__,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='String parser/formatter',
+      long_description=README,
       author='Panu Lahtinen',
       author_email='panu.lahtinen@fmi.fi',
       classifiers=["Development Status :: 3 - Alpha",
