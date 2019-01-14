@@ -175,7 +175,7 @@ class RegexFormatter(string.Formatter):
 
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = '<trollsift unprovided value>'
-    ESCAPE_CHARACTERS = [x for x in string.punctuation if x not in '\\%']
+    ESCAPE_CHARACTERS = ['\\'] + [x for x in string.punctuation if x not in '\\%']
     ESCAPE_SETS = [(c, '\{}'.format(c)) for c in ESCAPE_CHARACTERS]
 
     def __init__(self):
