@@ -1,3 +1,15 @@
+## Version 0.3.2 (2019/01/14)
+
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 13](https://github.com/pytroll/trollsift/pull/13) - Fix backslashes in regex patterns on Windows
+
+In this release 1 pull request was closed.
+
+
 ## Version 0.3.1 (2018/11/02)
 
 ### Issues Closed
