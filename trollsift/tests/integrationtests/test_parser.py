@@ -1,3 +1,4 @@
+import os
 import unittest
 import datetime as dt
 
@@ -81,17 +82,19 @@ class TestParserVariousFormats(unittest.TestCase):
         self.assertDictEqual(result, data)
 
     def test_parse_olci_l1b(self):
-        fmt = ("{mission_id:3s}_OL_1_{datatype_id:_<6s}_{start_time:%Y%m%dT%H%M%S}_"
-               "{end_time:%Y%m%dT%H%M%S}_{creation_time:%Y%m%dT%H%M%S}_{duration:4d}_"
-               "{cycle:3d}_{relative_orbit:3d}_{frame:4d}_{centre:3s}_{platform_mode:1s}_"
-               "{timeliness:2s}_{collection:3s}.SEN3/"
-               "{dataset_name}_radiance.nc")
+        fmt = os.path.join(
+            "{mission_id:3s}_OL_1_{datatype_id:_<6s}_{start_time:%Y%m%dT%H%M%S}_"
+            "{end_time:%Y%m%dT%H%M%S}_{creation_time:%Y%m%dT%H%M%S}_{duration:4d}_"
+            "{cycle:3d}_{relative_orbit:3d}_{frame:4d}_{centre:3s}_{platform_mode:1s}_"
+            "{timeliness:2s}_{collection:3s}.SEN3",
+            "{dataset_name}_radiance.nc")
         # made up:
-        filename = ("S3A_OL_1_EFR____20180916T090539_"
-                    "20180916T090839_20180916T090539_0001_"
-                    "001_001_0001_CEN_M_"
-                    "AA_AAA.SEN3/"
-                    "Oa21_radiance.nc")
+        filename = os.path.join(
+            "S3A_OL_1_EFR____20180916T090539_"
+            "20180916T090839_20180916T090539_0001_"
+            "001_001_0001_CEN_M_"
+            "AA_AAA.SEN3",
+            "Oa21_radiance.nc")
         data = {'mission_id': 'S3A',
                 'datatype_id': 'EFR',
                 'start_time': dt.datetime(2018, 9, 16, 9, 5, 39),
