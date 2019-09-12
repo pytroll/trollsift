@@ -41,11 +41,11 @@ class Parser(object):
     def __str__(self):
         return self.fmt
 
-    def parse(self, stri):
+    def parse(self, stri, full_match=True):
         '''Parse keys and corresponding values from *stri* using format
         described in *fmt* string.
         '''
-        return parse(self.fmt, stri)
+        return parse(self.fmt, stri, full_match=full_match)
 
     def compose(self, keyvals):
         '''Return string composed according to *fmt* string and filled
@@ -385,7 +385,7 @@ def parse(fmt, stri, full_match=True):
 
     """
     convdef = get_convert_dict(fmt)
-    keyvals = regex_formatter.extract_values(fmt, stri, full_match=True)
+    keyvals = regex_formatter.extract_values(fmt, stri, full_match=full_match)
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 
