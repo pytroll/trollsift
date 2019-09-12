@@ -295,8 +295,19 @@ class RegexFormatter(string.Formatter):
         field_name, value = value
         return self.regex_field(field_name, value, format_spec)
 
-    def extract_values(self, fmt, stri):
+    def extract_values(self, fmt, stri, full_match=True):
+        """Extract information from string matching format.
+
+        Args:
+            fmt (str): Python format string to match against
+            stri (str): String to extract information from
+            full_match (bool): Force the match of the whole string. Default
+                to ``True``.
+
+        """
         regex = self.format(fmt)
+        if full_match:
+            regex = '^' + regex + '$'
         match = re.match(regex, stri)
         if match is None:
             raise ValueError("String does not match pattern.")
@@ -307,9 +318,10 @@ regex_formatter = RegexFormatter()
 
 
 def _get_number_from_fmt(fmt):
-    """
-    Helper function for extract_values,
-    figures out string length from format string.
+    """Helper function for extract_values.
+
+    Figures out string length from format string.
+
     """
     if '%' in fmt:
         # its datetime
@@ -362,10 +374,18 @@ def get_convert_dict(fmt):
     return convdef
 
 
-def parse(fmt, stri):
-    """Parse keys and corresponding values from *stri* using format described in *fmt* string."""
+def parse(fmt, stri, full_match=True):
+    """Parse keys and corresponding values from *stri* using format described in *fmt* string.
+
+    Args:
+        fmt (str): Python format string to match against
+        stri (str): String to extract information from
+        full_match (bool): Force the match of the whole string. Default
+            True.
+
+    """
     convdef = get_convert_dict(fmt)
-    keyvals = regex_formatter.extract_values(fmt, stri)
+    keyvals = regex_formatter.extract_values(fmt, stri, full_match=True)
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 

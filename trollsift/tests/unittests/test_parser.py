@@ -97,6 +97,15 @@ class TestParser(unittest.TestCase):
         fmt = '/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:4d}.l1b'
         self.assertRaises(ValueError, regex_formatter.extract_values, fmt, self.string)
 
+    def test_extract_values_full_match(self):
+        """Test that a string must completely match."""
+        fmt = '{orbit:05d}'
+        val = regex_formatter.extract_values(fmt, '12345')
+        self.assertEqual(val, {'orbit': '12345'})
+        self.assertRaises(ValueError, regex_formatter.extract_values, fmt, '12345abc')
+        val = regex_formatter.extract_values(fmt, '12345abc', full_match=False)
+        self.assertEqual(val, {'orbit': '12345'})
+
     def test_convert_digits(self):
         self.assertEqual(_convert('d', '69022'), 69022)
         self.assertRaises(ValueError, _convert, 'd', '69dsf')
