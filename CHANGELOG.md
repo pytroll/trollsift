@@ -1,3 +1,18 @@
+## Version 0.3.3 (2019/10/09)
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 15](https://github.com/pytroll/trollsift/pull/15) - Fix parse accepting strings with trailing characters
+
+#### Features added
+
+* [PR 14](https://github.com/pytroll/trollsift/pull/14) - Adding .stickler.yml configuration file
+
+In this release 2 pull requests were closed.
+
+
 ## Version 0.3.2 (2019/01/14)
 
 
