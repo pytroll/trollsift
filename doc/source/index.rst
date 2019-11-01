@@ -16,7 +16,7 @@ for writing higher level applications and api's for satellite batch processing.
 
 The source code of the package can be found at github, github_
 
-.. _github: https://github.com/pnuu/trollsift
+.. _github: https://github.com/pytroll/trollsift
 
 Contents
 +++++++++
