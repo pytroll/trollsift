@@ -9,7 +9,7 @@ Installation
 
 You can download the trollsift source code from github,::
 
-  $ git clone https://github.com/pnuu/trollsift.git
+  $ git clone https://github.com/pytroll/trollsift.git
 
 and then run::
 
