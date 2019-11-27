@@ -300,6 +300,26 @@ class TestParser(unittest.TestCase):
         self.assertRaises(ValueError, compose, "{a!X}", key_vals)
         self.assertEqual(new_str, 'this Is A-Test b_test c test')
 
+    def test_greediness(self):
+        """Test that the minimum match is parsed out.
+
+        See GH #18.
+        """
+        from trollsift import parse
+        template_parts = ['{band_type}',
+                          '{polarization_extracted}',
+                          '{unit}',
+                          '{s1_fname}']
+        template = '_'.join(template_parts)
+        fname = 'Amplitude_VH_db_S1A_IW_GRDH_1SDV_20160528T171628_20160528T171653_011462_011752_0EED.tif'
+        res_dict = parse(template, fname)
+        self.assertEqual({
+            'band_type': 'Amplitude',
+            'polarization_extracted': 'VH',
+            'unit': 'db',
+            's1_fname': 'S1A_IW_GRDH_1SDV_20160528T171628_20160528T171653_011462_011752_0EED.tif',
+        }, res_dict)
+
 
 def suite():
     """The suite for test_parser

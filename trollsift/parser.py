@@ -285,6 +285,7 @@ class RegexFormatter(string.Formatter):
         # Replace format spec with glob patterns (*, ?, etc)
         if not format_spec:
             return r'(?P<{}>.*)'.format(field_name)
+            # return r'(?P<{}>.*?)'.format(field_name)
         if '%' in format_spec:
             return r'(?P<{}>{})'.format(field_name, self._regex_datetime(format_spec))
         return self.format_spec_to_regex(field_name, format_spec)
