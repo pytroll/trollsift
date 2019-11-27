@@ -306,19 +306,20 @@ class TestParser(unittest.TestCase):
         See GH #18.
         """
         from trollsift import parse
-        template_parts = ['{band_type}',
-                          '{polarization_extracted}',
-                          '{unit}',
-                          '{s1_fname}']
-        template = '_'.join(template_parts)
+        template = '{band_type}_{polarization_extracted}_{unit}_{s1_fname}'
         fname = 'Amplitude_VH_db_S1A_IW_GRDH_1SDV_20160528T171628_20160528T171653_011462_011752_0EED.tif'
         res_dict = parse(template, fname)
-        self.assertEqual({
+        exp = {
             'band_type': 'Amplitude',
             'polarization_extracted': 'VH',
             'unit': 'db',
             's1_fname': 'S1A_IW_GRDH_1SDV_20160528T171628_20160528T171653_011462_011752_0EED.tif',
-        }, res_dict)
+        }
+        self.assertEqual(exp, res_dict)
+
+        template = '{band_type:s}_{polarization_extracted}_{unit}_{s1_fname}'
+        res_dict = parse(template, fname)
+        self.assertEqual(exp, res_dict)
 
 
 def suite():
