@@ -1,14 +1,12 @@
-.. _string-format: https://docs.python.org/2/library/string.html#format-string-syntax
-
 Usage
------
+=====
 
 Trollsift include collection of modules that assist with formatting, parsing and filtering satellite granule file names. These modules are useful and necessary for writing higher level applications and api’s for satellite batch processing. Currently we are implementing the string parsing and composing functionality. Watch this space for further modules to do with various types of filtering of satellite data granules.
 
 Parser
-++++++++++
-The trollsift string parser module is useful for composing (formatting) and parsing strings 
-compatible with the Python string-format_ style. In satellite data file name filtering,
+------
+The trollsift string parser module is useful for composing (formatting) and parsing strings
+compatible with the Python :ref:`python:formatstrings`. In satellite data file name filtering,
 the library is useful for extracting typical information from granule filenames, such
 as observation time, platform and instrument names. The trollsift Parser can also
 verify that the string formatting is invertible, i.e. specific enough to ensure that
@@ -16,19 +14,32 @@ parsing and composing of strings are bijective mappings ( aka one-to-one corresp
 which may be essential for some applications, such as predicting granule 
 
 parsing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The Parser object holds a format string, allowing us to parse and compose strings,
+^^^^^^^
+The Parser object holds a format string, allowing us to parse and compose strings:
 
   >>> from trollsift import Parser
   >>> 
   >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
   >>> data = p.parse("/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b")
-  >>> print data
+  >>> print(data)
   {'directory': 'otherdir', 'platform': 'noaa', 'platnum': '16',
   'time': datetime.datetime(2014,02,12,14,12), 'orbit':69022}
-  
+
+Parsing in trollsift is not "greedy". This means that in the case of ambiguous
+patterns it will match the shortest portion of the string possible. For example:
+
+  >>> from trollsift import Parser
+  >>>
+  >>> p = Parser("{field_one}_{field_two}")
+  >>> data = p.parse("abc_def_ghi")
+  >>> print(data)
+  {'field_one': 'abc', 'field_two': 'def_ghi'}
+
+So even though the first field could have matched to "abc_def", the non-greedy
+parsing chose the shorter possible match of "abc".
+
 composing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 The reverse operation is called 'compose', and is equivalent to the Python string
 class format method.  Here we change the time stamp of the data, and write out 
 a new file name,
@@ -48,7 +59,7 @@ provides extra conversion options such as making all characters lowercase:
 For all of the options see :class:`~trollsift.parser.StringFormatter`.
 
 standalone parse and compose
-+++++++++++++++++++++++++++++++++++++++++
+----------------------------
 
 The parse and compose methods also exist as standalone functions,
 depending on your requirements you can call,
