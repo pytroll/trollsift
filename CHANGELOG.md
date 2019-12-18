@@ -1,3 +1,20 @@
+## Version 0.3.4 (2019/12/18)
+
+### Issues Closed
+
+* [Issue 18](https://github.com/pytroll/trollsift/issues/18) - Different parsing allignment behaviour between 0.2.* and 0.3.* ([PR 19](https://github.com/pytroll/trollsift/pull/19))
+
+In this release 1 issue was closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 19](https://github.com/pytroll/trollsift/pull/19) - Fix regex parser being too greedy with partial string patterns ([18](https://github.com/pytroll/trollsift/issues/18))
+
+In this release 1 pull request was closed.
+
+
 ## Version 0.3.3 (2019/10/09)
 
 ### Pull Requests Merged
