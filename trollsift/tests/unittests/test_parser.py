@@ -320,12 +320,3 @@ class TestParser(unittest.TestCase):
         template = '{band_type:s}_{polarization_extracted}_{unit}_{s1_fname}'
         res_dict = parse(template, fname)
         self.assertEqual(exp, res_dict)
-
-
-def suite():
-    """The suite for test_parser
-    """
-    loader = unittest.TestLoader()
-    mysuite = unittest.TestSuite()
-    mysuite.addTest(loader.loadTestsFromTestCase(TestParser))
-    return mysuite

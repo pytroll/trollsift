@@ -1,29 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright (c) 2014, 2015
-
-# Author(s):
-
-# Panu Lahtinen <panu.lahtinen@fmi.fi>
-# Hróbjartur Thorsteinsson <thorsteinssonh@gmail.com>
-
+#
+# Copyright (c) 2014-2020 Trollsift Developers
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-
-"""Parser class
-"""
+"""Main parsing and formatting functionality."""
 
 import re
 import datetime as dt
@@ -32,8 +24,7 @@ import string
 
 
 class Parser(object):
-    """Parser class
-    """
+    """Class-based interface to parsing and formatting functionality."""
 
     def __init__(self, fmt):
         self.fmt = fmt
@@ -188,7 +179,7 @@ class RegexFormatter(string.Formatter):
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = '<trollsift unprovided value>'
     ESCAPE_CHARACTERS = ['\\'] + [x for x in string.punctuation if x not in '\\%']
-    ESCAPE_SETS = [(c, '\{}'.format(c)) for c in ESCAPE_CHARACTERS]
+    ESCAPE_SETS = [(c, '\\' + c) for c in ESCAPE_CHARACTERS]
 
     def __init__(self):
         # hold on to fields we've seen already so we can reuse their
