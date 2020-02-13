@@ -16,18 +16,3 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Regression tests for the trollsift package."""
-from . import test_parser
-import unittest
-
-
-def suite():
-    """The global test suite.
-    """
-    mysuite = unittest.TestSuite()
-    # Use the unittests also
-    mysuite.addTests(test_parser.suite())
-
-    return mysuite
-
-if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(suite())
