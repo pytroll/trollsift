@@ -52,7 +52,7 @@ a new file name,
 In addition to python's builtin string formatting functionality trollsift also
 provides extra conversion options such as making all characters lowercase:
 
-  >>> my_parser = Parser("{platform_name:l}")
+  >>> my_parser = Parser("{platform_name!l}")
   >>> my_parser.compose({'platform_name': 'NPP'})
   'npp'
 
