@@ -3,7 +3,7 @@ env:
   global:
   - PYTHON_VERSION=$PYTHON_VERSION
   - NUMPY_VERSION=stable
-  - CONDA_DEPENDENCIES='pytest pytest-cov coveralls coverage mock'
+  - CONDA_DEPENDENCIES='pytest pytest-cov coveralls coverage'
   - PIP_DEPENDENCIES=''
   - SETUP_XVFB=False
   - EVENT_TYPE='push pull_request'
