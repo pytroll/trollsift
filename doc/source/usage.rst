@@ -21,9 +21,9 @@ The Parser object holds a format string, allowing us to parse and compose string
   >>> 
   >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
   >>> data = p.parse("/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b")
-  >>> print(data)
+  >>> print(data) # doctest: +NORMALIZE_WHITESPACE
   {'directory': 'otherdir', 'platform': 'noaa', 'platnum': '16',
-  'time': datetime.datetime(2014,02,12,14,12), 'orbit':69022}
+   'time': datetime.datetime(2014, 2, 10, 10, 4), 'orbit': 69022}
 
 Parsing in trollsift is not "greedy". This means that in the case of ambiguous
 patterns it will match the shortest portion of the string possible. For example:
@@ -40,9 +40,15 @@ parsing chose the shorter possible match of "abc".
 
 composing
 ^^^^^^^^^
-The reverse operation is called 'compose', and is equivalent to the Python string
-class format method.  Here we change the time stamp of the data, and write out 
-a new file name,
+The reverse operation is called 'compose', and is equivalent to the Python
+string class format method.  Here we take the filename pattern from earlier,
+change the time stamp of the data, and write out a new file name,
+
+.. doctest::
+   :hide:
+  >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
+  >>> data = p.parse("/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b")
+
 
   >>> from datetime import datetime
   >>> data['time'] = datetime(2012, 1, 1, 1, 1)
@@ -52,7 +58,7 @@ a new file name,
 In addition to python's builtin string formatting functionality trollsift also
 provides extra conversion options such as making all characters lowercase:
 
-  >>> my_parser = Parser("{platform_name:l}")
+  >>> my_parser = Parser("{platform_name!l}")
   >>> my_parser.compose({'platform_name': 'NPP'})
   'npp'
 

@@ -1,3 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2014-2020 Martin Raspaud
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Parser integration tests."""
 import os
 import unittest
 import datetime as dt
@@ -121,13 +139,3 @@ class TestParserVariousFormats(unittest.TestCase):
         p = Parser(fmt)
         result = p.parse(filename)
         self.assertEqual(result['version_number'], '1')
-
-
-def suite():
-    """The suite for test_parser
-    """
-    loader = unittest.TestLoader()
-    mysuite = unittest.TestSuite()
-    mysuite.addTest(loader.loadTestsFromTestCase(TestParser))
-    mysuite.addTest(loader.loadTestsFromTestCase(TestParserVariousFormats))
-    return mysuite
