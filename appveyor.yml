@@ -6,6 +6,7 @@ environment:
     CONDA_DEPENDENCIES: "coverage pytest pytest-cov"
     PIP_DEPENDENCIES: ""
     CONDA_CHANNELS: "conda-forge"
+    CONDA_CHANNEL_PRIORITY: "strict"
 
   matrix:
     - PYTHON: "C:\\Python37_64"
