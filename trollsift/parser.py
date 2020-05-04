@@ -368,7 +368,6 @@ def _convert(convdef, stri):
     return result
 
 
-
 @lru_cache()
 def get_convert_dict(fmt):
     """Retrieve parse definition from the format string `fmt`."""
@@ -587,10 +586,10 @@ def is_one2one(fmt):
 
 def purge():
     """Clear internal caches.
-    
+
     Not needed normally, but can be used to force cache clear when memory
     is very limited.
-    
+
     """
     regex_formatter.format.cache_clear()
     get_convert_dict.cache_clear()
