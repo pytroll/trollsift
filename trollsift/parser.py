@@ -21,6 +21,7 @@ import re
 import datetime as dt
 import random
 import string
+from functools import lru_cache
 
 
 class Parser(object):
@@ -187,6 +188,7 @@ class RegexFormatter(string.Formatter):
         self._cached_fields = {}
         super(RegexFormatter, self).__init__()
 
+    @lru_cache()
     def format(*args, **kwargs):
         try:
             # super() doesn't seem to work here
@@ -366,6 +368,8 @@ def _convert(convdef, stri):
     return result
 
 
+
+@lru_cache()
 def get_convert_dict(fmt):
     """Retrieve parse definition from the format string `fmt`."""
     convdef = {}
@@ -579,3 +583,14 @@ def is_one2one(fmt):
             return False
     # all checks passed, so just return True
     return True
+
+
+def purge():
+    """Clear internal caches.
+    
+    Not needed normally, but can be used to force cache clear when memory
+    is very limited.
+    
+    """
+    regex_formatter.format.cache_clear()
+    get_convert_dict.cache_clear()

@@ -40,6 +40,18 @@ class TestParser(unittest.TestCase):
         # Assert
         self.assertDictEqual(result, self.data)
 
+    def test_cache_clear(self):
+        """Test we can clear the internal cache properly"""
+        from trollsift.parser import purge
+        from trollsift.parser import regex_formatter
+        # Run
+        result = self.p.parse(self.string)
+        # Assert
+        self.assertDictEqual(result, self.data)
+        assert regex_formatter.format.cache_info()[-1] != 0
+        purge()
+        assert regex_formatter.format.cache_info()[-1] == 0
+
     def test_compose(self):
         # Run
         result = self.p.compose(self.data)
