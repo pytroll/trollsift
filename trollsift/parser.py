@@ -133,7 +133,16 @@ formatter = StringFormatter()
 spec_regexes = {
     'c': r'.',
     'd': r'[-+]?\d',
-    'f': r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?',
+    'f': {
+        # Naive fixed point format specifier (e.g. {foo:f})
+        'naive': r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?',
+        # Fixed point format specifier including width and precision
+        # (e.g. {foo:4.2f}). The lookahead (?=.{width}) makes sure that the
+        # subsequent pattern is only matched if the string has the required
+        # (minimum) width.
+        'precision': r'(?=.{{{width}}})([-+]?([\d ]+(\.\d{{{decimals}}})+|\.\d{{{decimals}}})([eE][-+]?\d+)?)'
+
+    },
     'i': r'[-+]?(0[xX][\dA-Fa-f]+|0[0-7]*|\d+)',
     'o': r'[-+]?[0-7]',
     's': r'\S',
@@ -144,11 +153,32 @@ spec_regexes['E'] = spec_regexes['f']
 spec_regexes['g'] = spec_regexes['f']
 spec_regexes['X'] = spec_regexes['x']
 allow_multiple = ['c', 'd', 'o', 's', 'x', 'X']
+fixed_point_types = ['f', 'e', 'E', 'g']
 # format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
 # https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 fmt_spec_regex = re.compile(
     r'(?P<align>(?P<fill>.)?[<>=^])?(?P<sign>[\+\-\s])?(?P<pound>#)?(?P<zero>0)?(?P<width>\d+)?'
     r'(?P<comma>,)?(?P<precision>.\d+)?(?P<type>[bcdeEfFgGnosxX%])')
+
+
+def _get_fixed_point_regex(regex_dict, width, precision):
+    """Get regular expression for fixed point numbers.
+
+    Args:
+        width: Total width of the string representation.
+        precision: Number of decimals.
+    """
+    if width or precision:
+        if precision is None:
+            precision = '0,'
+        else:
+            precision = precision.strip('.')
+        if width is None:
+            width = '1,'
+        return regex_dict['precision'].format(
+            width=width, decimals=precision)
+    else:
+        return regex_dict['naive']
 
 
 class RegexFormatter(string.Formatter):
@@ -248,6 +278,7 @@ class RegexFormatter(string.Formatter):
         ftype = regex_dict['type']
         width = regex_dict['width']
         align = regex_dict['align']
+        precision = regex_dict['precision']
         # NOTE: does not properly handle `=` alignment
         if fill is None:
             if width is not None and width[0] == '0':
@@ -256,13 +287,19 @@ class RegexFormatter(string.Formatter):
                 fill = ' '
 
         char_type = spec_regexes[ftype]
+        if ftype in fixed_point_types:
+            char_type = _get_fixed_point_regex(
+                char_type,
+                width=width,
+                precision=precision
+            )
         if ftype == 's' and align and align.endswith('='):
             raise ValueError("Invalid format specification: '{}'".format(format_spec))
         final_regex = char_type
         if ftype in allow_multiple and (not width or width == '0'):
             final_regex += r'*?'
         elif width and width != '0':
-            if not fill:
+            if not fill and ftype not in fixed_point_types:
                 # we know we have exactly this many characters
                 final_regex += r'{{{}}}'.format(int(width))
             elif fill:
@@ -339,9 +376,10 @@ def _get_number_from_fmt(fmt):
 
 def _convert(convdef, stri):
     """Convert the string *stri* to the given conversion definition *convdef*."""
+    is_fixed_point = any([ftype in convdef for ftype in fixed_point_types])
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
-    elif 'd' in convdef or 's' in convdef:
+    elif 'd' in convdef or 's' in convdef or is_fixed_point:
         regex_match = fmt_spec_regex.match(convdef)
         match_dict = regex_match.groupdict() if regex_match else {}
         align = match_dict.get('align')
@@ -361,6 +399,8 @@ def _convert(convdef, stri):
 
         if 'd' in convdef:
             result = int(stri)
+        elif is_fixed_point:
+            result = float(stri)
         else:
             result = stri
     else:

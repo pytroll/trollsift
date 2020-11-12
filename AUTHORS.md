@@ -9,3 +9,4 @@ The following people have made contributions to this project:
 - [Panu Lahtinen (pnuu)](https://github.com/pnuu)
 - [Martin Raspaud (mraspaud)](https://github.com/mraspaud)
 - [Hrobjartur Thorsteinsson (thorsteinssonh)](https://github.com/thorsteinssonh)
+- [Stephan Finkensieper (sfinkens)](https://github.com/sfinkens)

@@ -3,7 +3,7 @@ import datetime as dt
 
 from trollsift.parser import get_convert_dict, regex_formatter
 from trollsift.parser import _convert
-from trollsift.parser import parse, globify, validate, is_one2one
+from trollsift.parser import parse, globify, validate, is_one2one, compose
 
 
 class TestParser(unittest.TestCase):
@@ -320,3 +320,63 @@ class TestParser(unittest.TestCase):
         template = '{band_type:s}_{polarization_extracted}_{unit}_{s1_fname}'
         res_dict = parse(template, fname)
         self.assertEqual(exp, res_dict)
+
+    def test_fixed_point(self):
+        """Test parsing of fixed point numbers."""
+        cases_ok = [
+            # Naive
+            {'fmt': '{foo:f}', 'string': '12.34', 'expected': 12.34},
+            # Including width and precision
+            {'fmt': '{foo:5.2f}', 'string': '12.34', 'expected': 12.34},
+            {'fmt': '{foo:5.2f}', 'string': '-1.23', 'expected': -1.23},
+            {'fmt': '{foo:5.2f}', 'string': '12.34', 'expected': 12.34},
+            {'fmt': '{foo:5.2f}', 'string': '123.45', 'expected': 123.45},
+            # Whitespace padded
+            {'fmt': '{foo:5.2f}', 'string': ' 1.23', 'expected': 1.23},
+            {'fmt': '{foo:5.2f}', 'string': ' 12.34', 'expected': 12.34},
+            # Zero padded
+            {'fmt': '{foo:05.2f}', 'string': '01.23', 'expected': 1.23},
+            {'fmt': '{foo:05.2f}', 'string': '012.34', 'expected': 12.34},
+            # Only precision, no width
+            {'fmt': '{foo:.2f}', 'string': '12.34', 'expected': 12.34},
+            # Only width, no precision
+            {'fmt': '{foo:16f}', 'string': '            1.12', 'expected': 1.12},
+            # No digits before decimal point
+            {'fmt': '{foo:3.2f}', 'string': '.12', 'expected': 0.12},
+            {'fmt': '{foo:4.2f}', 'string': '-.12', 'expected': -0.12},
+            {'fmt': '{foo:4.2f}', 'string': ' .12', 'expected': 0.12},
+            {'fmt': '{foo:4.2f}', 'string': '  .12', 'expected': 0.12},
+            {'fmt': '{foo:16f}', 'string': '             .12', 'expected': 0.12},
+            # Exponential format
+            {'fmt': '{foo:7.2e}', 'string': '-1.23e4', 'expected': -1.23e4},
+        ]
+        cases_fail = [
+            # Decimals incorrect
+            {'fmt': '{foo:5.2f}', 'string': '12345'},
+            {'fmt': '{foo:5.2f}', 'string': '1234.'},
+            {'fmt': '{foo:5.2f}', 'string': '1.234'},
+            {'fmt': '{foo:5.2f}', 'string': '123.4'},
+            {'fmt': '{foo:.2f}', 'string': '12.345'},
+            # Decimals correct, but width too short
+            {'fmt': '{foo:5.2f}', 'string': '1.23'},
+            {'fmt': '{foo:5.2f}', 'string': '.23'},
+            {'fmt': '{foo:10.2e}', 'string': '1.23e4'},
+            # Invalid
+            {'fmt': '{foo:5.2f}', 'string': '12_34'},
+
+        ]
+
+        # Test parsing
+        for case in cases_ok:
+            parsed = parse(case['fmt'], case['string'])
+            self.assertEqual(parsed['foo'], case['expected'])
+
+        # Test round trip
+        for case in cases_ok:
+            composed = compose(case['fmt'], {'foo': case['expected']})
+            parsed = parse(case['fmt'], composed)
+            self.assertEqual(parsed['foo'], case['expected'])
+
+        # Test failures
+        for case in cases_fail:
+            self.assertRaises(ValueError, parse, case['fmt'], case['string'])
