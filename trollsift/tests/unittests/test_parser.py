@@ -1,5 +1,6 @@
 import unittest
 import datetime as dt
+import pytest
 
 from trollsift.parser import get_convert_dict, regex_formatter
 from trollsift.parser import _convert
@@ -321,9 +322,13 @@ class TestParser(unittest.TestCase):
         res_dict = parse(template, fname)
         self.assertEqual(exp, res_dict)
 
-    def test_fixed_point(self):
-        """Test parsing of fixed point numbers."""
-        cases_ok = [
+
+class TestParserFixedPoint:
+    """Test parsing of fixed point numbers."""
+
+    @pytest.mark.parametrize(
+        'test_case',
+        [
             # Naive
             {'fmt': '{foo:f}', 'string': '12.34', 'expected': 12.34},
             # Including width and precision
@@ -350,7 +355,22 @@ class TestParser(unittest.TestCase):
             # Exponential format
             {'fmt': '{foo:7.2e}', 'string': '-1.23e4', 'expected': -1.23e4},
         ]
-        cases_fail = [
+    )
+    def test_match(self, test_case):
+        """Test cases expected to be matched."""
+
+        # Test parsed value
+        parsed = parse(test_case['fmt'], test_case['string'])
+        assert parsed['foo'] == test_case['expected']
+
+        # Test round trip
+        composed = compose(test_case['fmt'], {'foo': test_case['expected']})
+        parsed = parse(test_case['fmt'], composed)
+        assert parsed['foo'] == test_case['expected']
+
+    @pytest.mark.parametrize(
+        'test_case',
+        [
             # Decimals incorrect
             {'fmt': '{foo:5.2f}', 'string': '12345'},
             {'fmt': '{foo:5.2f}', 'string': '1234.'},
@@ -363,20 +383,10 @@ class TestParser(unittest.TestCase):
             {'fmt': '{foo:10.2e}', 'string': '1.23e4'},
             # Invalid
             {'fmt': '{foo:5.2f}', 'string': '12_34'},
-
+            {'fmt': '{foo:5.2f}', 'string': 'aBcD'},
         ]
-
-        # Test parsing
-        for case in cases_ok:
-            parsed = parse(case['fmt'], case['string'])
-            self.assertEqual(parsed['foo'], case['expected'])
-
-        # Test round trip
-        for case in cases_ok:
-            composed = compose(case['fmt'], {'foo': case['expected']})
-            parsed = parse(case['fmt'], composed)
-            self.assertEqual(parsed['foo'], case['expected'])
-
-        # Test failures
-        for case in cases_fail:
-            self.assertRaises(ValueError, parse, case['fmt'], case['string'])
+    )
+    def test_no_match(self, test_case):
+        """Test cases expected to not be matched."""
+        with pytest.raises(ValueError):
+            parse(test_case['fmt'], test_case['string'])

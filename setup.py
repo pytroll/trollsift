@@ -47,4 +47,5 @@ setup(name="trollsift",
       keywords=["string parsing", "string formatting", "pytroll"],
       zip_safe=False,
       install_requires=[],
+      tests_require=['pytest']
       )
