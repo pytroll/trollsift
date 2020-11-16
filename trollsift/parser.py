@@ -396,8 +396,8 @@ def _strip_padding(convdef, stri):
     """Strip padding from the given string.
 
     Args:
+        convdef: Conversion definition (indicates the padding)
         stri: String to be modified
-        convdef: Corresponding conversion definition (indicates the padding)
     """
     regex_match = fmt_spec_regex.match(convdef)
     match_dict = regex_match.groupdict() if regex_match else {}
