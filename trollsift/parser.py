@@ -380,23 +380,7 @@ def _convert(convdef, stri):
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
     elif 'd' in convdef or 's' in convdef or is_fixed_point:
-        regex_match = fmt_spec_regex.match(convdef)
-        match_dict = regex_match.groupdict() if regex_match else {}
-        align = match_dict.get('align')
-        pad = match_dict.get('fill')
-        if align:
-            # align character is the last one
-            align = align[-1]
-        if align and align in '<>^' and not pad:
-            pad = ' '
-
-        if align == '>':
-            stri = stri.lstrip(pad)
-        elif align == '<':
-            stri = stri.rstrip(pad)
-        elif align == '^':
-            stri = stri.strip(pad)
-
+        stri = _strip_padding(convdef, stri)
         if 'd' in convdef:
             result = int(stri)
         elif is_fixed_point:
@@ -407,6 +391,30 @@ def _convert(convdef, stri):
         result = stri
     return result
 
+
+def _strip_padding(convdef, stri):
+    """Strip padding from the given string.
+
+    Args:
+        stri: String to be modified
+        convdef: Corresponding conversion definition (indicates the padding)
+    """
+    regex_match = fmt_spec_regex.match(convdef)
+    match_dict = regex_match.groupdict() if regex_match else {}
+    align = match_dict.get('align')
+    pad = match_dict.get('fill')
+    if align:
+        # align character is the last one
+        align = align[-1]
+    if align and align in '<>^' and not pad:
+        pad = ' '
+    if align == '>':
+        stri = stri.lstrip(pad)
+    elif align == '<':
+        stri = stri.rstrip(pad)
+    elif align == '^':
+        stri = stri.strip(pad)
+    return stri
 
 @lru_cache()
 def get_convert_dict(fmt):
