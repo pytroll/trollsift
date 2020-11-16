@@ -326,66 +326,66 @@ class TestParserFixedPoint:
     """Test parsing of fixed point numbers."""
 
     @pytest.mark.parametrize(
-        'test_case',
+        ('fmt', 'string', 'expected'),
         [
             # Naive
-            {'fmt': '{foo:f}', 'string': '12.34', 'expected': 12.34},
+            ('{foo:f}', '12.34', 12.34),
             # Including width and precision
-            {'fmt': '{foo:5.2f}', 'string': '12.34', 'expected': 12.34},
-            {'fmt': '{foo:5.2f}', 'string': '-1.23', 'expected': -1.23},
-            {'fmt': '{foo:5.2f}', 'string': '12.34', 'expected': 12.34},
-            {'fmt': '{foo:5.2f}', 'string': '123.45', 'expected': 123.45},
+            ('{foo:5.2f}', '12.34', 12.34),
+            ('{foo:5.2f}', '-1.23', -1.23),
+            ('{foo:5.2f}', '12.34', 12.34),
+            ('{foo:5.2f}', '123.45', 123.45),
             # Whitespace padded
-            {'fmt': '{foo:5.2f}', 'string': ' 1.23', 'expected': 1.23},
-            {'fmt': '{foo:5.2f}', 'string': ' 12.34', 'expected': 12.34},
+            ('{foo:5.2f}', ' 1.23', 1.23),
+            ('{foo:5.2f}', ' 12.34', 12.34),
             # Zero padded
-            {'fmt': '{foo:05.2f}', 'string': '01.23', 'expected': 1.23},
-            {'fmt': '{foo:05.2f}', 'string': '012.34', 'expected': 12.34},
+            ('{foo:05.2f}', '01.23', 1.23),
+            ('{foo:05.2f}', '012.34', 12.34),
             # Only precision, no width
-            {'fmt': '{foo:.2f}', 'string': '12.34', 'expected': 12.34},
+            ('{foo:.2f}', '12.34', 12.34),
             # Only width, no precision
-            {'fmt': '{foo:16f}', 'string': '            1.12', 'expected': 1.12},
+            ('{foo:16f}', '            1.12', 1.12),
             # No digits before decimal point
-            {'fmt': '{foo:3.2f}', 'string': '.12', 'expected': 0.12},
-            {'fmt': '{foo:4.2f}', 'string': '-.12', 'expected': -0.12},
-            {'fmt': '{foo:4.2f}', 'string': ' .12', 'expected': 0.12},
-            {'fmt': '{foo:4.2f}', 'string': '  .12', 'expected': 0.12},
-            {'fmt': '{foo:16f}', 'string': '             .12', 'expected': 0.12},
+            ('{foo:3.2f}', '.12', 0.12),
+            ('{foo:4.2f}', '-.12', -0.12),
+            ('{foo:4.2f}', ' .12', 0.12),
+            ('{foo:4.2f}', '  .12', 0.12),
+            ('{foo:16f}', '             .12', 0.12),
             # Exponential format
-            {'fmt': '{foo:7.2e}', 'string': '-1.23e4', 'expected': -1.23e4},
+            ('{foo:7.2e}', '-1.23e4', -1.23e4)
         ]
     )
-    def test_match(self, test_case):
+    def test_match(self, fmt, string, expected):
         """Test cases expected to be matched."""
 
         # Test parsed value
-        parsed = parse(test_case['fmt'], test_case['string'])
-        assert parsed['foo'] == test_case['expected']
+        parsed = parse(fmt, string)
+        assert parsed['foo'] == expected
 
         # Test round trip
-        composed = compose(test_case['fmt'], {'foo': test_case['expected']})
-        parsed = parse(test_case['fmt'], composed)
-        assert parsed['foo'] == test_case['expected']
+        composed = compose(fmt, {'foo': expected})
+        parsed = parse(fmt, composed)
+        assert parsed['foo'] == expected
 
     @pytest.mark.parametrize(
-        'test_case',
+        ('fmt', 'string'),
         [
             # Decimals incorrect
-            {'fmt': '{foo:5.2f}', 'string': '12345'},
-            {'fmt': '{foo:5.2f}', 'string': '1234.'},
-            {'fmt': '{foo:5.2f}', 'string': '1.234'},
-            {'fmt': '{foo:5.2f}', 'string': '123.4'},
-            {'fmt': '{foo:.2f}', 'string': '12.345'},
+            ('{foo:5.2f}', '12345'),
+            ('{foo:5.2f}', '1234.'),
+            ('{foo:5.2f}', '1.234'),
+            ('{foo:5.2f}', '123.4'),
+            ('{foo:.2f}', '12.345'),
             # Decimals correct, but width too short
-            {'fmt': '{foo:5.2f}', 'string': '1.23'},
-            {'fmt': '{foo:5.2f}', 'string': '.23'},
-            {'fmt': '{foo:10.2e}', 'string': '1.23e4'},
+            ('{foo:5.2f}', '1.23'),
+            ('{foo:5.2f}', '.23'),
+            ('{foo:10.2e}', '1.23e4'),
             # Invalid
-            {'fmt': '{foo:5.2f}', 'string': '12_34'},
-            {'fmt': '{foo:5.2f}', 'string': 'aBcD'},
+            ('{foo:5.2f}', '12_34'),
+            ('{foo:5.2f}', 'aBcD'),
         ]
     )
-    def test_no_match(self, test_case):
+    def test_no_match(self, fmt, string):
         """Test cases expected to not be matched."""
         with pytest.raises(ValueError):
-            parse(test_case['fmt'], test_case['string'])
+            parse(fmt, string)
