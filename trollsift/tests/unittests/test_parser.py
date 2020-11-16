@@ -274,7 +274,6 @@ class TestParser(unittest.TestCase):
 
     def test_compose(self):
         """Test the compose method's custom conversion options."""
-        from trollsift import compose
         key_vals = {'a': 'this Is A-Test b_test c test'}
 
         new_str = compose("{a!c}", key_vals)
