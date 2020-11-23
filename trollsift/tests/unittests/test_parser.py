@@ -1,9 +1,10 @@
 import unittest
 import datetime as dt
+import pytest
 
 from trollsift.parser import get_convert_dict, regex_formatter
 from trollsift.parser import _convert
-from trollsift.parser import parse, globify, validate, is_one2one
+from trollsift.parser import parse, globify, validate, is_one2one, compose
 
 
 class TestParser(unittest.TestCase):
@@ -273,7 +274,6 @@ class TestParser(unittest.TestCase):
 
     def test_compose(self):
         """Test the compose method's custom conversion options."""
-        from trollsift import compose
         key_vals = {'a': 'this Is A-Test b_test c test'}
 
         new_str = compose("{a!c}", key_vals)
@@ -320,3 +320,72 @@ class TestParser(unittest.TestCase):
         template = '{band_type:s}_{polarization_extracted}_{unit}_{s1_fname}'
         res_dict = parse(template, fname)
         self.assertEqual(exp, res_dict)
+
+
+class TestParserFixedPoint:
+    """Test parsing of fixed point numbers."""
+
+    @pytest.mark.parametrize(
+        ('fmt', 'string', 'expected'),
+        [
+            # Naive
+            ('{foo:f}', '12.34', 12.34),
+            # Including width and precision
+            ('{foo:5.2f}', '12.34', 12.34),
+            ('{foo:5.2f}', '-1.23', -1.23),
+            ('{foo:5.2f}', '12.34', 12.34),
+            ('{foo:5.2f}', '123.45', 123.45),
+            # Whitespace padded
+            ('{foo:5.2f}', ' 1.23', 1.23),
+            ('{foo:5.2f}', ' 12.34', 12.34),
+            # Zero padded
+            ('{foo:05.2f}', '01.23', 1.23),
+            ('{foo:05.2f}', '012.34', 12.34),
+            # Only precision, no width
+            ('{foo:.2f}', '12.34', 12.34),
+            # Only width, no precision
+            ('{foo:16f}', '            1.12', 1.12),
+            # No digits before decimal point
+            ('{foo:3.2f}', '.12', 0.12),
+            ('{foo:4.2f}', '-.12', -0.12),
+            ('{foo:4.2f}', ' .12', 0.12),
+            ('{foo:4.2f}', '  .12', 0.12),
+            ('{foo:16f}', '             .12', 0.12),
+            # Exponential format
+            ('{foo:7.2e}', '-1.23e4', -1.23e4)
+        ]
+    )
+    def test_match(self, fmt, string, expected):
+        """Test cases expected to be matched."""
+
+        # Test parsed value
+        parsed = parse(fmt, string)
+        assert parsed['foo'] == expected
+
+        # Test round trip
+        composed = compose(fmt, {'foo': expected})
+        parsed = parse(fmt, composed)
+        assert parsed['foo'] == expected
+
+    @pytest.mark.parametrize(
+        ('fmt', 'string'),
+        [
+            # Decimals incorrect
+            ('{foo:5.2f}', '12345'),
+            ('{foo:5.2f}', '1234.'),
+            ('{foo:5.2f}', '1.234'),
+            ('{foo:5.2f}', '123.4'),
+            ('{foo:.2f}', '12.345'),
+            # Decimals correct, but width too short
+            ('{foo:5.2f}', '1.23'),
+            ('{foo:5.2f}', '.23'),
+            ('{foo:10.2e}', '1.23e4'),
+            # Invalid
+            ('{foo:5.2f}', '12_34'),
+            ('{foo:5.2f}', 'aBcD'),
+        ]
+    )
+    def test_no_match(self, fmt, string):
+        """Test cases expected to not be matched."""
+        with pytest.raises(ValueError):
+            parse(fmt, string)
