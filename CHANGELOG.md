@@ -1,3 +1,28 @@
+## Version 0.3.5 (2021/02/15)
+
+### Issues Closed
+
+* [Issue 27](https://github.com/pytroll/trollsift/issues/27) - Parsing zero padded floats
+* [Issue 26](https://github.com/pytroll/trollsift/issues/26) - MNT: Stop using ci-helpers in appveyor.yml
+* [Issue 23](https://github.com/pytroll/trollsift/issues/23) - Bug when parsing leap day when you dont have year
+* [Issue 20](https://github.com/pytroll/trollsift/issues/20) - Special conversion specifiers do not work ([PR 21](https://github.com/pytroll/trollsift/pull/21))
+
+In this release 4 issues were closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 21](https://github.com/pytroll/trollsift/pull/21) - Fix typo in string formatting usage example and drop Python 2.7 tests ([20](https://github.com/pytroll/trollsift/issues/20))
+
+#### Features added
+
+* [PR 29](https://github.com/pytroll/trollsift/pull/29) - GitHub actions
+* [PR 25](https://github.com/pytroll/trollsift/pull/25) - Add lru_cache to parsing for improved performance
+
+In this release 3 pull requests were closed.
+
+
 ## Version 0.3.4 (2019/12/18)
 
 ### Issues Closed
