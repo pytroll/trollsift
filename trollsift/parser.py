@@ -460,6 +460,7 @@ def compose(fmt, keyvals):
     """Convert parameters in `keyvals` to a string based on `fmt` string."""
     return formatter.format(fmt, **keyvals)
 
+
 def partial_compose(fmt, keyvals):
     """Convert parameters in `keyvals` to a string based on `fmt` string.
 
@@ -478,6 +479,7 @@ def partial_compose(fmt, keyvals):
         composed_string = composed_string.replace(fmt_placeholder, fmt_specification)
 
     return composed_string
+
 
 def _replace_undefined_params_with_placeholders(fmt, keyvals=None):
     """Replace with placeholders params in `fmt` not specified in `keyvals`."""
