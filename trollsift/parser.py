@@ -46,11 +46,16 @@ class Parser(object):
         return compose(self.fmt, keyvals)
 
     def partial_compose(self, keyvals):
-        '''Return string composed according to *fmt* string and filled
-        with values with the corresponding keys in *keyvals* dictionary.
-        Not all params in *fmt* need to be specified in *keyvals*.
-        Unspecified parameters are left unchanged.
-        '''
+        """Convert parameters in `keyvals` to a string based on the *fmt* string.
+
+        This method is similar to compose, but accepts partial composing, i.e.,
+        not all parameters in `fmt` need to be specified in `keyvals`. Unspecified
+        parameters are left unchanged.
+
+        Args:
+            keyvals (dict): "Parameter --> parameter value" map
+
+        """
         return partial_compose(self.fmt, keyvals)
 
     format = compose
