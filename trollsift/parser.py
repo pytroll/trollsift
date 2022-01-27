@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014-2020 Trollsift Developers
+# Copyright (c) 2014-2022 Trollsift Developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,17 @@ class Parser(object):
         '''
         return compose(self.fmt, keyvals)
 
+    def partial_compose(self, keyvals):
+        '''Return string composed according to *fmt* string and filled
+        with values with the corresponding keys in *keyvals* dictionary.
+        Not all params in *fmt* need to be specified in *keyvals*.
+        Unspecified parameters are left unchanged.
+        '''
+        return partial_compose(self.fmt, keyvals)
+
     format = compose
+
+    partial_format = partial_compose
 
     def globify(self, keyvals=None):
         '''Generate a  string useable with glob.glob()  from format string
@@ -449,6 +459,43 @@ def parse(fmt, stri, full_match=True):
 def compose(fmt, keyvals):
     """Convert parameters in `keyvals` to a string based on `fmt` string."""
     return formatter.format(fmt, **keyvals)
+
+def partial_compose(fmt, keyvals):
+    """Convert parameters in `keyvals` to a string based on `fmt` string.
+
+    This routine is similar to compose, but accepts partial composing, i.e.,
+    not all parameters in `fmt` need to be specified in `keyvals`. Unspecified
+    parameters are left unchanged.
+
+    Args:
+        fmt (str): Python format string to match against
+        keyvals (dict): "Parameter --> parameter value" map
+
+    """
+    fmt, undefined_vars = _replace_undefined_params_with_placeholders(fmt, keyvals)
+    composed_string = compose(fmt=fmt, keyvals=keyvals)
+    for fmt_placeholder, fmt_specification in undefined_vars.items():
+        composed_string = composed_string.replace(fmt_placeholder, fmt_specification)
+
+    return composed_string
+
+def _replace_undefined_params_with_placeholders(fmt, keyvals=None):
+    """Replace with placeholders params in `fmt` not specified in `keyvals`."""
+    vars_left_undefined = get_convert_dict(fmt).keys()
+    if keyvals is not None:
+        vars_left_undefined -= keyvals.keys()
+
+    undefined_vars_placeholders_dict = {}
+    for var in vars_left_undefined:
+        matches = set(match.group() for match in re.finditer(rf"{{{var}([^\w{{}}].*?)*}}", fmt))
+        if len(matches) == 0:
+            raise ValueError(f"Could not capture definitions for {var} from {fmt}")
+        for var_specification in matches:
+            fmt_placeholder = f"({hex(hash(var_specification))})"
+            undefined_vars_placeholders_dict[fmt_placeholder] = var_specification
+            fmt = fmt.replace(var_specification, fmt_placeholder)
+
+    return fmt, undefined_vars_placeholders_dict
 
 
 DT_FMT = {

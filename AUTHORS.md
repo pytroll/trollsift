@@ -10,3 +10,4 @@ The following people have made contributions to this project:
 - [Martin Raspaud (mraspaud)](https://github.com/mraspaud)
 - [Hrobjartur Thorsteinsson (thorsteinssonh)](https://github.com/thorsteinssonh)
 - [Stephan Finkensieper (sfinkens)](https://github.com/sfinkens)
+- [Paulo Medeiros (paulovcmedeiros)](https://github.com/paulovcmedeiros)
