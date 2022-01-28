@@ -39,28 +39,24 @@ class Parser(object):
         '''
         return parse(self.fmt, stri, full_match=full_match)
 
-    def compose(self, keyvals):
-        '''Return string composed according to *fmt* string and filled
-        with values with the corresponding keys in *keyvals* dictionary.
-        '''
-        return compose(self.fmt, keyvals)
-
-    def partial_compose(self, keyvals):
-        """Convert parameters in `keyvals` to a string based on the *fmt* string.
-
-        This method is similar to compose, but accepts partial composing, i.e.,
-        not all parameters in `fmt` need to be specified in `keyvals`. Unspecified
-        parameters are left unchanged.
+    def compose(self, keyvals, allow_partial=False):
+        """Compose format string *self.fmt* with parameters given in the *keyvals* dict.
 
         Args:
             keyvals (dict): "Parameter --> parameter value" map
+            allow_partial (bool): If True, then partial composition is allowed, i.e.,
+                not all parameters present in `fmt` need to be specified in `keyvals`.
+                Unspecified parameters will, in this case, be left unchanged.
+                (Default value = False).
+
+        Returns:
+            str: Result of formatting the *self.fmt* string with parameter values
+                extracted from the corresponding items in the *keyvals* dictionary.
 
         """
-        return partial_compose(self.fmt, keyvals)
+        return compose(fmt=self.fmt, keyvals=keyvals, allow_partial=allow_partial)
 
     format = compose
-
-    partial_format = partial_compose
 
     def globify(self, keyvals=None):
         '''Generate a  string useable with glob.glob()  from format string
@@ -461,48 +457,25 @@ def parse(fmt, stri, full_match=True):
     return keyvals
 
 
-def compose(fmt, keyvals):
-    """Convert parameters in `keyvals` to a string based on `fmt` string."""
-    return formatter.format(fmt, **keyvals)
-
-
-def partial_compose(fmt, keyvals):
-    """Convert parameters in `keyvals` to a string based on `fmt` string.
-
-    This routine is similar to compose, but accepts partial composing, i.e.,
-    not all parameters in `fmt` need to be specified in `keyvals`. Unspecified
-    parameters are left unchanged.
+def compose(fmt, keyvals, allow_partial=False):
+    """Compose format string *self.fmt* with parameters given in the *keyvals* dict.
 
     Args:
         fmt (str): Python format string to match against
         keyvals (dict): "Parameter --> parameter value" map
+        allow_partial (bool): If True, then partial composition is allowed, i.e.,
+            not all parameters present in `fmt` need to be specified in `keyvals`.
+            Unspecified parameters will, in this case, be left unchanged.
+            (Default value = False).
+
+    Returns:
+        str: Result of formatting the *self.fmt* string with parameter values
+            extracted from the corresponding items in the *keyvals* dictionary.
 
     """
-    fmt, undefined_vars = _replace_undefined_params_with_placeholders(fmt, keyvals)
-    composed_string = compose(fmt=fmt, keyvals=keyvals)
-    for fmt_placeholder, fmt_specification in undefined_vars.items():
-        composed_string = composed_string.replace(fmt_placeholder, fmt_specification)
-
-    return composed_string
-
-
-def _replace_undefined_params_with_placeholders(fmt, keyvals=None):
-    """Replace with placeholders params in `fmt` not specified in `keyvals`."""
-    vars_left_undefined = get_convert_dict(fmt).keys()
-    if keyvals is not None:
-        vars_left_undefined -= keyvals.keys()
-
-    undefined_vars_placeholders_dict = {}
-    for var in vars_left_undefined:
-        matches = set(match.group() for match in re.finditer(rf"{{{var}([^\w{{}}].*?)*}}", fmt))
-        if len(matches) == 0:
-            raise ValueError(f"Could not capture definitions for {var} from {fmt}")
-        for var_specification in matches:
-            fmt_placeholder = f"({hex(hash(var_specification))})"
-            undefined_vars_placeholders_dict[fmt_placeholder] = var_specification
-            fmt = fmt.replace(var_specification, fmt_placeholder)
-
-    return fmt, undefined_vars_placeholders_dict
+    if allow_partial:
+        return _partial_compose(fmt=fmt, keyvals=keyvals)
+    return _strict_compose(fmt=fmt, keyvals=keyvals)
 
 
 DT_FMT = {
@@ -695,3 +668,51 @@ def purge():
     """
     regex_formatter.format.cache_clear()
     get_convert_dict.cache_clear()
+
+
+def _strict_compose(fmt, keyvals):
+    """Convert parameters in `keyvals` to a string based on `fmt` string."""
+    return formatter.format(fmt, **keyvals)
+
+
+def _partial_compose(fmt, keyvals):
+    """Convert parameters in `keyvals` to a string based on `fmt` string.
+
+    Similar to _strict_compose, but accepts partial composing, i.e., not all
+    parameters in `fmt` need to be specified in `keyvals`. Unspecified parameters
+    are left unchanged.
+
+    Args:
+        fmt (str): Python format string to match against
+        keyvals (dict): "Parameter --> parameter value" map
+
+    """
+    fmt, undefined_vars = _replace_undefined_params_with_placeholders(fmt, keyvals)
+    composed_string = _strict_compose(fmt=fmt, keyvals=keyvals)
+    for fmt_placeholder, fmt_specification in undefined_vars.items():
+        composed_string = composed_string.replace(fmt_placeholder, fmt_specification)
+
+    return composed_string
+
+
+def _replace_undefined_params_with_placeholders(fmt, keyvals=None):
+    """Replace with placeholders params in `fmt` not specified in `keyvals`."""
+    vars_left_undefined = get_convert_dict(fmt).keys()
+    if keyvals is not None:
+        vars_left_undefined -= keyvals.keys()
+
+    undefined_vars_placeholders_dict = {}
+    new_fmt = fmt
+    for var in sorted(vars_left_undefined):
+        matches = set(
+            match.group()
+            for match in re.finditer(rf"{{{re.escape(var)}([^\w{{}}].*?)*}}", new_fmt)
+        )
+        if len(matches) == 0:
+            raise ValueError(f"Could not capture definitions for {var} from {fmt}")
+        for var_specification in matches:
+            fmt_placeholder = f"({hex(hash(var_specification))})"
+            undefined_vars_placeholders_dict[fmt_placeholder] = var_specification
+            new_fmt = new_fmt.replace(var_specification, fmt_placeholder)
+
+    return new_fmt, undefined_vars_placeholders_dict
