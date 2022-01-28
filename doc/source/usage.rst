@@ -44,16 +44,20 @@ The reverse operation is called 'compose', and is equivalent to the Python
 string class format method.  Here we take the filename pattern from earlier,
 change the time stamp of the data, and write out a new file name,
 
-.. doctest::
-   :hide:
-  >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
-  >>> data = p.parse("/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b")
-
-
   >>> from datetime import datetime
-  >>> data['time'] = datetime(2012, 1, 1, 1, 1)
+  >>>
+  >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
+  >>> data = {'directory': 'otherdir', 'platform': 'noaa', 'platnum': '16', 'time': datetime(2012, 1, 1, 1, 1), 'orbit': 69022}
   >>> p.compose(data)
   '/somedir/otherdir/hrpt_noaa16_20120101_0101_69022.l1b'
+
+It is also possible to compose only partially, i.e., compose by specifying values
+for only a subset of the parameters in the format string. Example:
+
+  >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
+  >>> data = {'directory':'my_dir'}
+  >>> p.compose(data, allow_partial=True)
+  '/somedir/my_dir/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b'
 
 In addition to python's builtin string formatting functionality trollsift also
 provides extra conversion options such as making all characters lowercase:
