@@ -343,11 +343,31 @@ class TestCompose:
         )
         assert composed == "{variant:s}/foo_{start_time:%Y%m%d_%H%M}_{product}.bar"
 
+    def test_partial_compose_with_similarly_named_params(self):
+        """Test that partial compose handles well vars with common substrings in name."""
+        original_fmt = "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
+        composed = compose(fmt=original_fmt, keyvals={"afooo":"qux"}, allow_partial=True)
+        assert composed == "{foo}qux{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
+
     def test_partial_compose_repeated_vars_with_different_formatting(self):
         """Test partial compose with a fmt with repeated vars with different formatting."""
         fmt = "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.{format}"
         composed = compose(fmt=fmt, keyvals={"format": "qux"}, allow_partial=True)
         assert composed == "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.qux"
+
+    @pytest.mark.parametrize(
+        'original_fmt',
+        ["{}_{}", "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"]
+    )
+    def test_partial_compose_is_identity_with_empty_keyvals(self, original_fmt):
+        """Test that partial compose leaves the input untouched if no keyvals at all."""
+        assert compose(fmt=original_fmt, keyvals={}, allow_partial=True) == original_fmt
+
+    def test_that_some_invalid_fmt_can_confuse_partial_compose(self):
+        """Test that a fmt with a weird char can confuse partial compose."""
+        fmt = "{foo?}_{bar}_{foo}.qux"
+        with pytest.raises(ValueError):
+            _ = compose(fmt=fmt, keyvals={}, allow_partial=True)
 
 
 class TestParserFixedPoint:
