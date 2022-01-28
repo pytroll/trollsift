@@ -305,7 +305,7 @@ class RegexFormatter(string.Formatter):
                 width=width,
                 precision=precision
             )
-        if ftype in ['s', ''] and align and align.endswith('='):
+        if ftype in ('s', '') and align and align.endswith('='):
             raise ValueError("Invalid format specification: '{}'".format(format_spec))
         final_regex = char_type
         if ftype in allow_multiple and (not width or width == '0'):
