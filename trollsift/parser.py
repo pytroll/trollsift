@@ -163,13 +163,14 @@ spec_regexes['e'] = spec_regexes['f']
 spec_regexes['E'] = spec_regexes['f']
 spec_regexes['g'] = spec_regexes['f']
 spec_regexes['X'] = spec_regexes['x']
-allow_multiple = ['c', 'd', 'o', 's', 'x', 'X']
+spec_regexes[''] = spec_regexes['s']
+allow_multiple = ['c', 'd', 'o', 's', '', 'x', 'X']
 fixed_point_types = ['f', 'e', 'E', 'g']
 # format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
 # https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 fmt_spec_regex = re.compile(
     r'(?P<align>(?P<fill>.)?[<>=^])?(?P<sign>[\+\-\s])?(?P<pound>#)?(?P<zero>0)?(?P<width>\d+)?'
-    r'(?P<comma>,)?(?P<precision>.\d+)?(?P<type>[bcdeEfFgGnosxX%])')
+    r'(?P<comma>,)?(?P<precision>.\d+)?(?P<type>[bcdeEfFgGnosxX%]?)')
 
 
 def _get_fixed_point_regex(regex_dict, width, precision):
@@ -294,7 +295,7 @@ class RegexFormatter(string.Formatter):
         if fill is None:
             if width is not None and width[0] == '0':
                 fill = '0'
-            elif ftype in ['s', 'd']:
+            elif ftype in ['s', '', 'd']:
                 fill = ' '
 
         char_type = spec_regexes[ftype]
@@ -304,7 +305,7 @@ class RegexFormatter(string.Formatter):
                 width=width,
                 precision=precision
             )
-        if ftype == 's' and align and align.endswith('='):
+        if ftype in ['s', ''] and align and align.endswith('='):
             raise ValueError("Invalid format specification: '{}'".format(format_spec))
         final_regex = char_type
         if ftype in allow_multiple and (not width or width == '0'):
@@ -390,7 +391,7 @@ def _convert(convdef, stri):
     is_fixed_point = any([ftype in convdef for ftype in fixed_point_types])
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
-    elif 'd' in convdef or 's' in convdef or is_fixed_point:
+    elif 'd' in convdef or 's' in convdef or '' in convdef or is_fixed_point:
         stri = _strip_padding(convdef, stri)
         if 'd' in convdef:
             result = int(stri)
