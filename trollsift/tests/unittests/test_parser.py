@@ -272,34 +272,6 @@ class TestParser(unittest.TestCase):
         self.assertFalse(is_one2one(
             "/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:d}.l1b"))
 
-    def test_compose(self):
-        """Test the compose method's custom conversion options."""
-        key_vals = {'a': 'this Is A-Test b_test c test'}
-
-        new_str = compose("{a!c}", key_vals)
-        self.assertEqual(new_str, 'This is a-test b_test c test')
-        new_str = compose("{a!h}", key_vals)
-        self.assertEqual(new_str, 'thisisatestbtestctest')
-        new_str = compose("{a!H}", key_vals)
-        self.assertEqual(new_str, 'THISISATESTBTESTCTEST')
-        new_str = compose("{a!l}", key_vals)
-        self.assertEqual(new_str, 'this is a-test b_test c test')
-        new_str = compose("{a!R}", key_vals)
-        self.assertEqual(new_str, 'thisIsATestbtestctest')
-        new_str = compose("{a!t}", key_vals)
-        self.assertEqual(new_str, 'This Is A-Test B_Test C Test')
-        new_str = compose("{a!u}", key_vals)
-        self.assertEqual(new_str, 'THIS IS A-TEST B_TEST C TEST')
-        # builtin repr
-        new_str = compose("{a!r}", key_vals)
-        self.assertEqual(new_str, '\'this Is A-Test b_test c test\'')
-        # no formatting
-        new_str = compose("{a}", key_vals)
-        self.assertEqual(new_str, 'this Is A-Test b_test c test')
-        # bad formatter
-        self.assertRaises(ValueError, compose, "{a!X}", key_vals)
-        self.assertEqual(new_str, 'this Is A-Test b_test c test')
-
     def test_greediness(self):
         """Test that the minimum match is parsed out.
 
@@ -322,9 +294,86 @@ class TestParser(unittest.TestCase):
         self.assertEqual(exp, res_dict)
 
 
+class TestCompose:
+    """Test routines related to `compose` methods."""
+
+    @pytest.mark.parametrize('allow_partial', [False, True])
+    def test_compose(self, allow_partial):
+        """Test the compose method's custom conversion options."""
+        key_vals = {"a": "this Is A-Test b_test c test"}
+
+        new_str = compose("{a!c}", key_vals, allow_partial=allow_partial)
+        assert new_str == "This is a-test b_test c test"
+        new_str = compose("{a!h}", key_vals, allow_partial=allow_partial)
+        assert new_str == "thisisatestbtestctest"
+        new_str = compose("{a!H}", key_vals, allow_partial=allow_partial)
+        assert new_str == "THISISATESTBTESTCTEST"
+        new_str = compose("{a!l}", key_vals, allow_partial=allow_partial)
+        assert new_str == "this is a-test b_test c test"
+        new_str = compose("{a!R}", key_vals, allow_partial=allow_partial)
+        assert new_str == "thisIsATestbtestctest"
+        new_str = compose("{a!t}", key_vals, allow_partial=allow_partial)
+        assert new_str == "This Is A-Test B_Test C Test"
+        new_str = compose("{a!u}", key_vals, allow_partial=allow_partial)
+        assert new_str == "THIS IS A-TEST B_TEST C TEST"
+        # builtin repr
+        new_str = compose("{a!r}", key_vals, allow_partial=allow_partial)
+        assert new_str == "'this Is A-Test b_test c test'"
+        # no formatting
+        new_str = compose("{a}", key_vals, allow_partial=allow_partial)
+        assert new_str == "this Is A-Test b_test c test"
+        # bad formatter
+        with pytest.raises(ValueError):
+            new_str = compose("{a!X}", key_vals, allow_partial=allow_partial)
+        assert new_str == "this Is A-Test b_test c test"
+
+    def test_default_compose_is_strict(self):
+        """Make sure the default compose call does not accept partial composition."""
+        fmt = "{foo}_{bar}.qux"
+        with pytest.raises(KeyError):
+            _ = compose(fmt, {"foo": "foo"})
+
+    def test_partial_compose_simple(self):
+        """Test partial compose with a simple use case."""
+        fmt = "{variant:s}/{platform_name}_{start_time:%Y%m%d_%H%M}_{product}.{format}"
+        composed = compose(
+            fmt=fmt,
+            keyvals={"platform_name": "foo", "format": "bar"},
+            allow_partial=True
+        )
+        assert composed == "{variant:s}/foo_{start_time:%Y%m%d_%H%M}_{product}.bar"
+
+    def test_partial_compose_with_similarly_named_params(self):
+        """Test that partial compose handles well vars with common substrings in name."""
+        original_fmt = "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
+        composed = compose(fmt=original_fmt, keyvals={"afooo": "qux"}, allow_partial=True)
+        assert composed == "{foo}qux{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
+
+    def test_partial_compose_repeated_vars_with_different_formatting(self):
+        """Test partial compose with a fmt with repeated vars with different formatting."""
+        fmt = "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.{format}"
+        composed = compose(fmt=fmt, keyvals={"format": "qux"}, allow_partial=True)
+        assert composed == "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.qux"
+
+    @pytest.mark.parametrize(
+        'original_fmt',
+        ["{}_{}", "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"]
+    )
+    def test_partial_compose_is_identity_with_empty_keyvals(self, original_fmt):
+        """Test that partial compose leaves the input untouched if no keyvals at all."""
+        assert compose(fmt=original_fmt, keyvals={}, allow_partial=True) == original_fmt
+
+    def test_that_some_invalid_fmt_can_confuse_partial_compose(self):
+        """Test that a fmt with a weird char can confuse partial compose."""
+        fmt = "{foo?}_{bar}_{foo}.qux"
+        with pytest.raises(ValueError):
+            _ = compose(fmt=fmt, keyvals={}, allow_partial=True)
+
+
 class TestParserFixedPoint:
     """Test parsing of fixed point numbers."""
 
+    @pytest.mark.parametrize('allow_partial_compose', [False, True])
     @pytest.mark.parametrize(
         ('fmt', 'string', 'expected'),
         [
@@ -355,7 +404,7 @@ class TestParserFixedPoint:
             ('{foo:7.2e}', '-1.23e4', -1.23e4)
         ]
     )
-    def test_match(self, fmt, string, expected):
+    def test_match(self, allow_partial_compose, fmt, string, expected):
         """Test cases expected to be matched."""
 
         # Test parsed value
@@ -363,7 +412,7 @@ class TestParserFixedPoint:
         assert parsed['foo'] == expected
 
         # Test round trip
-        composed = compose(fmt, {'foo': expected})
+        composed = compose(fmt, {'foo': expected}, allow_partial=allow_partial_compose)
         parsed = parse(fmt, composed)
         assert parsed['foo'] == expected
 
