@@ -331,7 +331,7 @@ class TestCompose:
         """Make sure the default compose call does not accept partial composition."""
         fmt = "{foo}_{bar}.qux"
         with pytest.raises(KeyError):
-            _ = compose(fmt, {"foo":"foo"})
+            _ = compose(fmt, {"foo": "foo"})
 
     def test_partial_compose_simple(self):
         """Test partial compose with a simple use case."""
@@ -346,7 +346,7 @@ class TestCompose:
     def test_partial_compose_with_similarly_named_params(self):
         """Test that partial compose handles well vars with common substrings in name."""
         original_fmt = "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
-        composed = compose(fmt=original_fmt, keyvals={"afooo":"qux"}, allow_partial=True)
+        composed = compose(fmt=original_fmt, keyvals={"afooo": "qux"}, allow_partial=True)
         assert composed == "{foo}qux{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
 
     def test_partial_compose_repeated_vars_with_different_formatting(self):
