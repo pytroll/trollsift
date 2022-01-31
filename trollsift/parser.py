@@ -388,19 +388,15 @@ def _get_number_from_fmt(fmt):
 
 def _convert(convdef, stri):
     """Convert the string *stri* to the given conversion definition *convdef*."""
-    is_fixed_point = any([ftype in convdef for ftype in fixed_point_types])
     if '%' in convdef:
         result = dt.datetime.strptime(stri, convdef)
-    elif 'd' in convdef or 's' in convdef or '' in convdef or is_fixed_point:
-        stri = _strip_padding(convdef, stri)
-        if 'd' in convdef:
-            result = int(stri)
-        elif is_fixed_point:
-            result = float(stri)
-        else:
-            result = stri
     else:
-        result = stri
+        result = _strip_padding(convdef, stri)
+        if 'd' in convdef:
+            result = int(result)
+        elif any(float_type_marker in convdef for float_type_marker in fixed_point_types):
+            result = float(result)
+
     return result
 
 
