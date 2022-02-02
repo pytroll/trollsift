@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, 2015, 2020
+# Copyright (c) 2014-2022 trollsift developers
 #
 # Author(s):
 #
