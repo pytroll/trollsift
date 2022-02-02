@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, 2015
+# Copyright (c) 2014-2022 trollsift developers
 #
 # Author(s):
 #
@@ -32,8 +32,9 @@ setup(name="trollsift",
       cmdclass=versioneer.get_cmdclass(),
       description='String parser/formatter',
       long_description=README,
-      author='Panu Lahtinen',
-      author_email='panu.lahtinen@fmi.fi',
+      long_description_content_type='text/x-rst',
+      author='The Pytroll Team',
+      author_email='pytroll@googlegroups.com',
       classifiers=["Development Status :: 5 - Production/Stable",
                    "Intended Audience :: Science/Research",
                    "License :: OSI Approved :: GNU General Public License v3 " +
@@ -46,6 +47,7 @@ setup(name="trollsift",
       packages=['trollsift'],
       keywords=["string parsing", "string formatting", "pytroll"],
       zip_safe=False,
+      python_requires='>=3.6',
       install_requires=[],
       tests_require=['pytest']
       )
