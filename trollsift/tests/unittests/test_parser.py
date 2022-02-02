@@ -126,6 +126,19 @@ class TestParser(unittest.TestCase):
                                       'time': dt.datetime(2014, 2, 12, 14, 12),
                                       'orbit': 12345})
 
+    def test_parse_string_padding_syntax_with_and_without_s(self):
+        """Test that, in string padding syntax, '' is equivalent to 's'.
+
+        From <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>:
+            * Type 's': String format. This is the default type for strings and may be omitted.
+            * Type None: The same as 's'.
+        """
+        result = parse('{foo}/{bar:_<8}', 'baz/qux_____')
+        expected_result = parse('{foo}/{bar:_<8s}', 'baz/qux_____')
+        self.assertEqual(expected_result["foo"], "baz")
+        self.assertEqual(expected_result["bar"], "qux")
+        self.assertEqual(result, expected_result)
+
     def test_parse_wildcards(self):
         # Run
         result = parse(
