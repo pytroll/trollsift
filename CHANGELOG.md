@@ -1,3 +1,24 @@
+## Version 0.4.0 (2022/02/03)
+
+### Issues Closed
+
+* [Issue 30](https://github.com/pytroll/trollsift/issues/30) - Problems with padding syntax ([PR 33](https://github.com/pytroll/trollsift/pull/33) by [@paulovcmedeiros](https://github.com/paulovcmedeiros))
+
+In this release 1 issue was closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 33](https://github.com/pytroll/trollsift/pull/33) - Fix problems with type='' in string padding syntax ([30](https://github.com/pytroll/trollsift/issues/30))
+
+#### Features added
+
+* [PR 32](https://github.com/pytroll/trollsift/pull/32) - Add 'allow_partial' keyword to compose
+* [PR 31](https://github.com/pytroll/trollsift/pull/31) - Change tested Python versions to 3.8, 3.9 and 3.10
+* [PR 24](https://github.com/pytroll/trollsift/pull/24) - Skip Python2 support and require python 3.6 or higher
+
+
 ## Version 0.3.5 (2021/02/15)
 
 ### Issues Closed
