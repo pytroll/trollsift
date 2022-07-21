@@ -67,7 +67,7 @@ class Parser(object):
     def validate(self, stri):
         """
         Validates that string *stri* is parsable and therefore complies with
-        this string format definition.  Useful for filtering strings, or to 
+        this string format definition.  Useful for filtering strings, or to
         check if a string if compatible before passing it to the
         parser function.
         """
@@ -83,9 +83,9 @@ class Parser(object):
         or loss in information.
 
         Note: This test only applies to sensible usage of the format string.
-        If string or numeric data is causes overflow, e.g. 
-        if composing "abcd" into {3s}, one to one correspondence will always 
-        be broken in such cases. This off course also applies to precision 
+        If string or numeric data is causes overflow, e.g.
+        if composing "abcd" into {3s}, one to one correspondence will always
+        be broken in such cases. This off course also applies to precision
         losses when using  datetime data.
         """
         return is_one2one(self.fmt)
@@ -142,6 +142,7 @@ formatter = StringFormatter()
 
 # taken from https://docs.python.org/3/library/re.html#simulating-scanf
 spec_regexes = {
+    'b': r'[-+]?[0-1]',
     'c': r'.',
     'd': r'[-+]?\d',
     'f': {
@@ -164,7 +165,7 @@ spec_regexes['E'] = spec_regexes['f']
 spec_regexes['g'] = spec_regexes['f']
 spec_regexes['X'] = spec_regexes['x']
 spec_regexes[''] = spec_regexes['s']
-allow_multiple = ['c', 'd', 'o', 's', '', 'x', 'X']
+allow_multiple = ['b', 'c', 'd', 'o', 's', '', 'x', 'X']
 fixed_point_types = ['f', 'e', 'E', 'g']
 # format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
 # https://docs.python.org/3.4/library/string.html#format-specification-mini-language
@@ -195,7 +196,7 @@ def _get_fixed_point_regex(regex_dict, width, precision):
 
 class RegexFormatter(string.Formatter):
     """String formatter that converts a format string to a regular expression.
-    
+
     >>> regex_formatter = RegexFormatter()
     >>> regex_str = regex_formatter.format('{field_one:5d}_{field_two}')
 
@@ -295,7 +296,7 @@ class RegexFormatter(string.Formatter):
         if fill is None:
             if width is not None and width[0] == '0':
                 fill = '0'
-            elif ftype in ['s', '', 'd']:
+            elif ftype in ['s', '', 'd', 'x', 'X', 'o', 'b']:
                 fill = ' '
 
         char_type = spec_regexes[ftype]
@@ -394,6 +395,12 @@ def _convert(convdef, stri):
         result = _strip_padding(convdef, stri)
         if 'd' in convdef:
             result = int(result)
+        elif 'x' in convdef or 'X' in convdef:
+            result = int(result, 16)
+        elif 'o' in convdef:
+            result = int(result, 8)
+        elif 'b' in convdef:
+            result = int(result, 2)
         elif any(float_type_marker in convdef for float_type_marker in fixed_point_types):
             result = float(result)
 
@@ -556,7 +563,7 @@ def globify(fmt, keyvals=None):
 def validate(fmt, stri):
     """
     Validates that string *stri* is parsable and therefore complies with
-    the format string, *fmt*.  Useful for filtering string, or to 
+    the format string, *fmt*.  Useful for filtering string, or to
     check if string if compatible before passing the string to the
     parser function.
     """
@@ -632,8 +639,8 @@ def is_one2one(fmt):
     or loss in information.
 
     Note: This test only applies to sensible usage of the format string.
-    If string or numeric data is causes overflow, e.g. 
-    if composing "abcd" into {3s}, one to one correspondence will always 
+    If string or numeric data is causes overflow, e.g.
+    if composing "abcd" into {3s}, one to one correspondence will always
     be broken in such cases. This of course also applies to precision
     losses when using  datetime data.
     """

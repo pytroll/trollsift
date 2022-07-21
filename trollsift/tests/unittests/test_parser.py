@@ -451,3 +451,36 @@ class TestParserFixedPoint:
         """Test cases expected to not be matched."""
         with pytest.raises(ValueError):
             parse(fmt, string)
+
+
+class TestIntegers:
+
+    @pytest.mark.parametrize(
+        ('fmt', 'string', 'expected'),
+        [
+            # Decimal
+            ("{foo:d}", "123", 123),
+            # Hex with small letter
+            ("{foo:x}", "7b", 123),
+            # Hex with big letter
+            ("{foo:X}", "7B", 123),
+            # Fixed length hex
+            ("{foo:03x}", "07b", 123),
+            ("{foo:3x}", " 7b", 123),
+            ("{foo:3X}", " 7B", 123),
+            # Octal
+            ("{foo:o}", "173", 123),
+            # Free size with octal
+            ("{bar:s}{foo:o}", "something173", 123),
+            ("{foo:_>4o}", "_173", 123),
+            # Fixed length with octal
+            ("{foo:4o}", " 173", 123),
+            # Binary
+            ("{foo:b}", "1111011", 123),
+            # Fixed length with binary
+            ("{foo:8b}", " 1111011", 123),
+            ("{foo:_>8b}", "_1111011", 123),
+        ]
+    )
+    def test_parse_integers(self, fmt, string, expected):
+        assert parse(fmt, string)["foo"] == expected
