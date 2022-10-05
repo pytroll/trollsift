@@ -350,26 +350,30 @@ class RegexFormatter(string.Formatter):
         field_name, value = value
         return self.regex_field(field_name, value, format_spec)
 
-    def extract_values(self, fmt, stri, full_match=True):
-        """Extract information from string matching format.
 
-        Args:
-            fmt (str): Python format string to match against
-            stri (str): String to extract information from
-            full_match (bool): Force the match of the whole string. Default
-                to ``True``.
-
-        """
-        regex = self.format(fmt)
-        if full_match:
-            regex = '^' + regex + '$'
-        match = re.match(regex, stri)
-        if match is None:
-            raise ValueError("String does not match pattern.")
-        return match.groupdict()
+@lru_cache()
+def regex_format(fmt):
+    # We create a new instance of RegexFormatter here to prevent concurrent calls to
+    # format interfering with one another.
+    return RegexFormatter().format(fmt)
 
 
-regex_formatter = RegexFormatter()
+def extract_values(fmt, stri, full_match=True):
+    """Extract information from string matching format.
+
+    Args:
+        fmt (str): Python format string to match against
+        stri (str): String to extract information from
+        full_match (bool): Force the match of the whole string. Default
+            to ``True``.
+    """
+    regex = regex_format(fmt)
+    if full_match:
+        regex = '^' + regex + '$'
+    match = re.match(regex, stri)
+    if match is None:
+        raise ValueError("String does not match pattern.")
+    return match.groupdict()
 
 
 def _get_number_from_fmt(fmt):
@@ -454,7 +458,7 @@ def parse(fmt, stri, full_match=True):
 
     """
     convdef = get_convert_dict(fmt)
-    keyvals = regex_formatter.extract_values(fmt, stri, full_match=full_match)
+    keyvals = extract_values(fmt, stri, full_match=full_match)
     for key in convdef.keys():
         keyvals[key] = _convert(convdef[key], keyvals[key])
 
@@ -670,7 +674,7 @@ def purge():
     is very limited.
 
     """
-    regex_formatter.format.cache_clear()
+    regex_format.cache_clear()
     get_convert_dict.cache_clear()
 
 

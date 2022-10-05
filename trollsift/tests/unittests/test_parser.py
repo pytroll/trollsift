@@ -2,7 +2,7 @@ import unittest
 import datetime as dt
 import pytest
 
-from trollsift.parser import get_convert_dict, regex_formatter
+from trollsift.parser import get_convert_dict, extract_values
 from trollsift.parser import _convert
 from trollsift.parser import parse, globify, validate, is_one2one, compose
 
@@ -31,54 +31,54 @@ class TestParser(unittest.TestCase):
 
     def test_extract_values(self):
         fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}.l1b"
-        result = regex_formatter.extract_values(fmt, self.string)
+        result = extract_values(fmt, self.string)
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_end(self):
         fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
-        result = regex_formatter.extract_values(fmt, self.string3)
+        result = extract_values(fmt, self.string3)
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_beginning(self):
         fmt = "{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
-        result = regex_formatter.extract_values(fmt, self.string4)
+        result = extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_s4spair(self):
         fmt = "{directory}/hrpt_{platform:4s}{platnum:s}_{time:%Y%m%d_%H%M}_{orbit:d}"
-        result = regex_formatter.extract_values(fmt, self.string4)
+        result = extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_ss2pair(self):
         fmt = "{directory}/hrpt_{platform:s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:d}"
-        result = regex_formatter.extract_values(fmt, self.string4)
+        result = extract_values(fmt, self.string4)
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16',
                                       'time': '20140210_1004', 'orbit': '69022'})
 
     def test_extract_values_ss2pair_end(self):
         fmt = "{directory}/hrpt_{platform:s}{platnum:2s}"
-        result = regex_formatter.extract_values(fmt, "/somedir/otherdir/hrpt_noaa16")
+        result = extract_values(fmt, "/somedir/otherdir/hrpt_noaa16")
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'platnum': '16'})
 
     def test_extract_values_sdatetimepair_end(self):
         fmt = "{directory}/hrpt_{platform:s}{date:%Y%m%d}"
-        result = regex_formatter.extract_values(fmt, "/somedir/otherdir/hrpt_noaa20140212")
+        result = extract_values(fmt, "/somedir/otherdir/hrpt_noaa20140212")
         self.assertDictEqual(result, {'directory': '/somedir/otherdir',
                                       'platform': 'noaa', 'date': '20140212'})
 
     def test_extract_values_everything(self):
         fmt = "{everything}"
-        result = regex_formatter.extract_values(fmt, self.string)
+        result = extract_values(fmt, self.string)
         self.assertDictEqual(
             result, {'everything': '/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b'})
 
@@ -88,7 +88,7 @@ class TestParser(unittest.TestCase):
         #             {'platform': '4s'}, {'platnum': '2s'},
         #             '_', {'time': '%Y%m%d_%H%M'}, '_',
         #             {'orbit': '0>5d'}, '.l1b']
-        result = regex_formatter.extract_values(fmt, self.string2)
+        result = extract_values(fmt, self.string2)
         # Assert
         self.assertDictEqual(result, {'directory': 'otherdir',
                                       'platform': 'noaa', 'platnum': '16',
@@ -96,15 +96,15 @@ class TestParser(unittest.TestCase):
 
     def test_extract_values_fails(self):
         fmt = '/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:4d}.l1b'
-        self.assertRaises(ValueError, regex_formatter.extract_values, fmt, self.string)
+        self.assertRaises(ValueError, extract_values, fmt, self.string)
 
     def test_extract_values_full_match(self):
         """Test that a string must completely match."""
         fmt = '{orbit:05d}'
-        val = regex_formatter.extract_values(fmt, '12345')
+        val = extract_values(fmt, '12345')
         self.assertEqual(val, {'orbit': '12345'})
-        self.assertRaises(ValueError, regex_formatter.extract_values, fmt, '12345abc')
-        val = regex_formatter.extract_values(fmt, '12345abc', full_match=False)
+        self.assertRaises(ValueError, extract_values, fmt, '12345abc')
+        val = extract_values(fmt, '12345abc', full_match=False)
         self.assertEqual(val, {'orbit': '12345'})
 
     def test_convert_digits(self):
