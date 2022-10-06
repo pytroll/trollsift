@@ -11,3 +11,4 @@ The following people have made contributions to this project:
 - [Hrobjartur Thorsteinsson (thorsteinssonh)](https://github.com/thorsteinssonh)
 - [Stephan Finkensieper (sfinkens)](https://github.com/sfinkens)
 - [Paulo Medeiros (paulovcmedeiros)](https://github.com/paulovcmedeiros)
+- [Regan Koopmans (Regan-Koopmans)](https://github.com/Regan-Koopmans)
