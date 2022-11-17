@@ -4,7 +4,7 @@ import pytest
 
 from trollsift.parser import get_convert_dict, extract_values
 from trollsift.parser import _convert
-from trollsift.parser import parse, globify, validate, is_one2one, compose
+from trollsift.parser import parse, globify, validate, is_one2one, compose, Parser
 
 
 class TestParser(unittest.TestCase):
@@ -16,6 +16,12 @@ class TestParser(unittest.TestCase):
         self.string2 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022.l1b"
         self.string3 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
         self.string4 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
+
+    def test_parser_keys(self):
+        parser = Parser(self.fmt)
+        keys = {"directory", "platform", "platnum", "time", "orbit"}
+        self.assertTrue(keys.issubset(parser.keys())
+                        and keys.issuperset(parser.keys()))
 
     def test_get_convert_dict(self):
         # Run

@@ -33,6 +33,11 @@ class Parser(object):
     def __str__(self):
         return self.fmt
 
+    def keys(self):
+        """Get parameter names defined in the format string."""
+        convert_dict = get_convert_dict(self.fmt)
+        return convert_dict.keys()
+
     def parse(self, stri, full_match=True):
         '''Parse keys and corresponding values from *stri* using format
         described in *fmt* string.
