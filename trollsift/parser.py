@@ -34,7 +34,7 @@ class Parser(object):
         return self.fmt
 
     def keys(self):
-        """Return the keys defined in the format"""
+        """Get parameter names defined in the format string."""
         convert_dict = get_convert_dict(self.fmt)
         return convert_dict.keys()
 
