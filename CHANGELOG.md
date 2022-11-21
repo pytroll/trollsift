@@ -1,3 +1,28 @@
+## Version 0.5.0 (2022/11/21)
+
+### Issues Closed
+
+* [Issue 45](https://github.com/pytroll/trollsift/issues/45) - Provide simple access to defined keys of a parser instance ([PR 46](https://github.com/pytroll/trollsift/pull/46) by [@carloshorn](https://github.com/carloshorn))
+* [Issue 37](https://github.com/pytroll/trollsift/issues/37) - Global instances of formatters ([PR 38](https://github.com/pytroll/trollsift/pull/38) by [@Regan-Koopmans](https://github.com/Regan-Koopmans))
+* [Issue 36](https://github.com/pytroll/trollsift/issues/36) - Alignment marker is not optional for numbers when it should
+* [Issue 34](https://github.com/pytroll/trollsift/issues/34) - Trollsift doesn't parse hex numbers ([PR 35](https://github.com/pytroll/trollsift/pull/35) by [@mraspaud](https://github.com/mraspaud))
+
+In this release 4 issues were closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 38](https://github.com/pytroll/trollsift/pull/38) - Replace global RegexFormatter with memoized function ([37](https://github.com/pytroll/trollsift/issues/37))
+* [PR 35](https://github.com/pytroll/trollsift/pull/35) - Add hex, octal, and binary parsing ([34](https://github.com/pytroll/trollsift/issues/34))
+
+#### Features added
+
+* [PR 46](https://github.com/pytroll/trollsift/pull/46) - Add keys method to Parser class ([45](https://github.com/pytroll/trollsift/issues/45))
+
+In this release 3 pull requests were closed.
+
+
 ## Version 0.4.0 (2022/02/03)
 
 ### Issues Closed
