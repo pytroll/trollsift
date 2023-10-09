@@ -1,3 +1,19 @@
+## Version 0.5.1 (2023/10/09)
+
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 49](https://github.com/pytroll/trollsift/pull/49) - Update versioneer to stop using deprecated distutils module.
+
+#### Features added
+
+* [PR 56](https://github.com/pytroll/trollsift/pull/56) - Add readthedocs configuration file
+
+In this release 2 pull requests were closed.
+
+
 ## Version 0.5.2 (2023/10/09)
 
 
