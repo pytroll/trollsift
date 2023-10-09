@@ -14,14 +14,6 @@
 In this release 2 pull requests were closed.
 
 
-## Version 0.5.2 (2023/10/09)
-
-
-
-## Version 0.5.1 (2023/10/09)
-
-
-
 ## Version 0.5.0 (2022/11/21)
 
 ### Issues Closed
@@ -195,4 +187,3 @@ In this release 1 pull request was closed.
 * [Issue 1](https://github.com/pytroll/trollsift/issues/1) - problem when parsing time strings
 
 In this release 2 issues were closed.
-
