@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+trollsift/version.py
 
 # Jupyter Notebook
 .ipynb_checkpoints
