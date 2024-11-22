@@ -1,6 +1,10 @@
 
 from .parser import *
 
-from .version import get_versions
-__version__ = get_versions()['version']
-del get_versions
+try:
+    from trollsift.version import version as __version__  # noqa
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "No module named trollsift.version. This could mean "
+        "you didn't install 'trollsift' properly. Try reinstalling ('pip "
+        "install').")

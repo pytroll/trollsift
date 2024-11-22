@@ -1,0 +1,40 @@
+[project]
+
+name = "trollsift"
+description = "String parser/formatter"
+readme = "README.rst"
+authors = [
+    { name = "The Pytroll Team", email = "pytroll@googlegroups.com" }
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering"
+]
+keywords = ["string parsing", "string formatting", "pytroll"]
+requires-python = ">=3.6"
+dependencies = []
+dynamic = ["version"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["trollsift"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "trollsift/version.py"
+
+[tool.coverage.run]
+relative_files = true
+omit = ["trollsift/version.py"]
