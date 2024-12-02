@@ -1,3 +1,15 @@
+## Version 0.5.2 (2024/12/02)
+
+
+### Pull Requests Merged
+
+#### Features added
+
+* [PR 75](https://github.com/pytroll/trollsift/pull/75) - Switch to pyproject.toml
+
+In this release 1 pull request was closed.
+
+
 ## Version 0.5.1 (2023/10/09)
 
 
