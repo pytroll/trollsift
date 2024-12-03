@@ -1,3 +1,15 @@
+## Version 0.5.3 (2024/12/03)
+
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 76](https://github.com/pytroll/trollsift/pull/76) - Drop support for Python 3.8 and below
+
+In this release 1 pull request was closed.
+
+
 ## Version 0.5.2 (2024/12/02)
 
 
