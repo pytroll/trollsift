@@ -15,7 +15,7 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 keywords = ["string parsing", "string formatting", "pytroll"]
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 dependencies = []
 dynamic = ["version"]
 
