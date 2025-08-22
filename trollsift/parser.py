@@ -24,7 +24,12 @@ import datetime as dt
 import random
 import string
 from functools import lru_cache
-from typing import Any
+import typing
+
+if typing.TYPE_CHECKING:
+    from _typeshed import StrOrLiteralStr
+    from typing import Any
+    from collections.abc import Iterator, Iterable, Sequence, Mapping
 
 
 class Parser:
@@ -129,9 +134,12 @@ class StringFormatter(string.Formatter):
         "u": "upper",
     }
 
-    def convert_field(self, value: str, conversion: str) -> str:
+    def convert_field(self, value: str, conversion: str | None) -> str:
         """Apply conversions mentioned in `StringFormatter.CONV_FUNCS`."""
-        func = self.CONV_FUNCS.get(conversion)
+        if conversion is None:
+            func = None
+        else:
+            func = self.CONV_FUNCS.get(conversion)
         if func is not None:
             value = getattr(value, func)()
         elif conversion not in ["R"]:
@@ -156,15 +164,13 @@ spec_regexes = {
     "b": r"[-+]?[0-1]",
     "c": r".",
     "d": r"[-+]?\d",
-    "f": {
-        # Naive fixed point format specifier (e.g. {foo:f})
-        "naive": r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?",
-        # Fixed point format specifier including width and precision
-        # (e.g. {foo:4.2f}). The lookahead (?=.{width}) makes sure that the
-        # subsequent pattern is only matched if the string has the required
-        # (minimum) width.
-        "precision": r"(?=.{{{width}}})([-+]?([\d ]+(\.\d{{{decimals}}})+|\.\d{{{decimals}}})([eE][-+]?\d+)?)",
-    },
+    # Naive fixed point format specifier (e.g. {foo:f})
+    "f": r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?",
+    # Fixed point format specifier including width and precision
+    # (e.g. {foo:4.2f}). The lookahead (?=.{width}) makes sure that the
+    # subsequent pattern is only matched if the string has the required
+    # (minimum) width.
+    "f_with_precision": r"(?=.{{{width}}})([-+]?([\d ]+(\.\d{{{decimals}}})+|\.\d{{{decimals}}})([eE][-+]?\d+)?)",
     "i": r"[-+]?(0[xX][\dA-Fa-f]+|0[0-7]*|\d+)",
     "o": r"[-+]?[0-7]",
     "s": r"\S",
@@ -185,15 +191,10 @@ fmt_spec_regex = re.compile(
 )
 
 
-def _get_fixed_point_regex(
-    regex_dict: dict[str, str], width: str | None, precision: str | None
-) -> str:
+def _get_fixed_point_regex(width: str | None, precision: str | None) -> str:
     """Get regular expression for fixed point numbers.
 
     Args:
-        regex_dict: Mapping of possible floating-point formatting types
-            to their regular expression. See the 'f' value in
-            `spec_regexes`.
         width: Total width of the string representation.
         precision: Number of decimals.
     """
@@ -204,9 +205,9 @@ def _get_fixed_point_regex(
             precision = precision.strip(".")
         if width is None:
             width = "1,"
-        return regex_dict["precision"].format(width=width, decimals=precision)
+        return spec_regexes["f_with_precision"].format(width=width, decimals=precision)
     else:
-        return regex_dict["naive"]
+        return spec_regexes["f"]
 
 
 class RegexFormatter(string.Formatter):
@@ -266,7 +267,7 @@ class RegexFormatter(string.Formatter):
             s = s.replace(ch, r_ch)
         return s
 
-    def parse(self, format_string: str) -> Iterator[tuple[str, str | None, str, str]]:
+    def parse(self, format_string: StrOrLiteralStr) -> Iterable[tuple[StrOrLiteralStr, StrOrLiteralStr | None, StrOrLiteralStr | None, StrOrLiteralStr | None]]:
         parse_ret = super(RegexFormatter, self).parse(format_string)
         for literal_text, field_name, format_spec, conversion in parse_ret:
             # the parent class will call parse multiple times moving
@@ -275,7 +276,7 @@ class RegexFormatter(string.Formatter):
             literal_text = self._escape(literal_text)
             yield literal_text, field_name, format_spec, conversion
 
-    def get_value(self, key: int | str, args: tuple, kwargs: dict[str, Any]) -> Any:
+    def get_value(self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(RegexFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -316,9 +317,7 @@ class RegexFormatter(string.Formatter):
 
         char_type = spec_regexes[ftype]
         if ftype in fixed_point_types:
-            char_type = _get_fixed_point_regex(
-                char_type, width=width, precision=precision
-            )
+            char_type = _get_fixed_point_regex(width=width, precision=precision)
         if ftype in ("s", "") and align and align.endswith("="):
             raise ValueError("Invalid format specification: '{}'".format(format_spec))
         final_regex = char_type
@@ -404,11 +403,15 @@ def _get_number_from_fmt(fmt: str) -> int:
     else:
         # its something else
         fmt = fmt.lstrip("0")
-        return int(re.search("[0-9]+", fmt).group(0))
+        fmt_digits_match = re.search("[0-9]+", fmt)
+        if fmt_digits_match is None:
+            raise ValueError(f"No number specified in format string: {fmt}")
+        return int(fmt_digits_match.group(0))
 
 
 def _convert(convdef: str, stri: str) -> Any:
     """Convert the string *stri* to the given conversion definition *convdef*."""
+    result: Any  # force mypy type
     if "%" in convdef:
         result = dt.datetime.strptime(stri, convdef)
     else:
@@ -459,7 +462,7 @@ def get_convert_dict(fmt: str) -> dict[str, str]:
     """Retrieve parse definition from the format string `fmt`."""
     convdef = {}
     for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
-        if field_name is None:
+        if field_name is None or format_spec is None:
             continue
         # XXX: Do I need to include 'conversion'?
         convdef[field_name] = format_spec
@@ -536,7 +539,7 @@ class GlobifyFormatter(string.Formatter):
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = "<trollsift unprovided value>"
 
-    def get_value(self, key: str | int, args: tuple, kwargs: dict) -> Any:
+    def get_value(self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(GlobifyFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -572,7 +575,7 @@ class GlobifyFormatter(string.Formatter):
 globify_formatter = GlobifyFormatter()
 
 
-def globify(fmt: str, keyvals: dict[str, any] | None = None) -> Any:
+def globify(fmt: str, keyvals: dict[str, Any] | None = None) -> Any:
     """Generate a string usable with glob.glob() from format string
     *fmt* and *keyvals* dictionary.
     """
@@ -594,7 +597,7 @@ def validate(fmt: str, stri: str) -> bool:
         return False
 
 
-def _generate_data_for_format(fmt: str) -> dict[str, Any]:
+def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
     """Generate a fake data dictionary to fill in the provided format string."""
     # finally try some data, create some random data for the fmt.
     data = {}
@@ -724,7 +727,7 @@ def _replace_undefined_params_with_placeholders(
     fmt: str, keyvals: dict[str, Any] | None = None
 ) -> tuple[str, dict[str, Any]]:
     """Replace with placeholders params in `fmt` not specified in `keyvals`."""
-    vars_left_undefined = get_convert_dict(fmt).keys()
+    vars_left_undefined = set(get_convert_dict(fmt).keys())
     if keyvals is not None:
         vars_left_undefined -= keyvals.keys()
 
