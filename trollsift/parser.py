@@ -267,7 +267,16 @@ class RegexFormatter(string.Formatter):
             s = s.replace(ch, r_ch)
         return s
 
-    def parse(self, format_string: StrOrLiteralStr) -> Iterable[tuple[StrOrLiteralStr, StrOrLiteralStr | None, StrOrLiteralStr | None, StrOrLiteralStr | None]]:
+    def parse(
+        self, format_string: StrOrLiteralStr
+    ) -> Iterable[
+        tuple[
+            StrOrLiteralStr,
+            StrOrLiteralStr | None,
+            StrOrLiteralStr | None,
+            StrOrLiteralStr | None,
+        ]
+    ]:
         parse_ret = super(RegexFormatter, self).parse(format_string)
         for literal_text, field_name, format_spec, conversion in parse_ret:
             # the parent class will call parse multiple times moving
@@ -276,7 +285,9 @@ class RegexFormatter(string.Formatter):
             literal_text = self._escape(literal_text)
             yield literal_text, field_name, format_spec, conversion
 
-    def get_value(self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
+    def get_value(
+        self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]
+    ) -> Any:
         try:
             return super(RegexFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -539,7 +550,9 @@ class GlobifyFormatter(string.Formatter):
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = "<trollsift unprovided value>"
 
-    def get_value(self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
+    def get_value(
+        self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]
+    ) -> Any:
         try:
             return super(GlobifyFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
