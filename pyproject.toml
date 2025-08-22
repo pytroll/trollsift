@@ -6,10 +6,11 @@ readme = "README.rst"
 authors = [
     { name = "The Pytroll Team", email = "pytroll@googlegroups.com" }
 ]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE.txt"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Topic :: Scientific/Engineering"
