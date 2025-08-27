@@ -50,7 +50,7 @@ class Parser:
         """Parse keys and values from ``stri`` using parser's format."""
         return parse(self.fmt, stri, full_match=full_match)
 
-    def compose(self, keyvals: dict[str, Any], allow_partial: bool = False) -> str:
+    def compose(self, keyvals: Mapping[str, Any], allow_partial: bool = False) -> str:
         """Compose format string ``self.fmt`` with parameters given in the ``keyvals`` dict.
 
         Args:
@@ -69,7 +69,7 @@ class Parser:
 
     format = compose
 
-    def globify(self, keyvals: dict[str, Any] | None = None) -> str:
+    def globify(self, keyvals: Mapping[str, Any] | None = None) -> str:
         """Generate a string usable with glob.glob() from format string."""
         return globify(self.fmt, keyvals)
 
@@ -497,7 +497,7 @@ def parse(fmt: str, stri: str, full_match: bool = True) -> dict[str, Any]:
     return keyvals
 
 
-def compose(fmt: str, keyvals: dict[str, Any], allow_partial: bool = False) -> str:
+def compose(fmt: str, keyvals: Mapping[str, Any], allow_partial: bool = False) -> str:
     """Compose format string *self.fmt* with parameters given in the *keyvals* dict.
 
     Args:
@@ -588,7 +588,7 @@ class GlobifyFormatter(string.Formatter):
 globify_formatter = GlobifyFormatter()
 
 
-def globify(fmt: str, keyvals: dict[str, Any] | None = None) -> Any:
+def globify(fmt: str, keyvals: Mapping[str, Any] | None = None) -> Any:
     """Generate a string usable with glob.glob() from format string
     *fmt* and *keyvals* dictionary.
     """
@@ -711,12 +711,12 @@ def purge() -> None:
     get_convert_dict.cache_clear()
 
 
-def _strict_compose(fmt: str, keyvals: dict[str, Any]) -> str:
+def _strict_compose(fmt: str, keyvals: Mapping[str, Any]) -> str:
     """Convert parameters in `keyvals` to a string based on `fmt` string."""
     return formatter.format(fmt, **keyvals)
 
 
-def _partial_compose(fmt: str, keyvals: dict[str, Any]) -> str:
+def _partial_compose(fmt: str, keyvals: Mapping[str, Any]) -> str:
     """Convert parameters in `keyvals` to a string based on `fmt` string.
 
     Similar to _strict_compose, but accepts partial composing, i.e., not all
@@ -737,7 +737,7 @@ def _partial_compose(fmt: str, keyvals: dict[str, Any]) -> str:
 
 
 def _replace_undefined_params_with_placeholders(
-    fmt: str, keyvals: dict[str, Any] | None = None
+    fmt: str, keyvals: Mapping[str, Any] | None = None
 ) -> tuple[str, dict[str, Any]]:
     """Replace with placeholders params in `fmt` not specified in `keyvals`."""
     vars_left_undefined = set(get_convert_dict(fmt).keys())
