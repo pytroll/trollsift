@@ -40,6 +40,17 @@ version-file = "trollsift/version.py"
 relative_files = true
 omit = ["trollsift/version.py"]
 
+[tool.pytest.ini_options]
+minversion = 6.0
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+log_cli_level = "info"
+testpaths = ["trollsift/tests"]
+filterwarnings = [
+    "error",
+    "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
+]
+
 [tool.ruff]
 line-length = 120
 
