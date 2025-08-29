@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -U codecov pytest pytest-cov
+          pip install -U codecov pytest pytest-cov mypy
 
       - name: Install trollsift
         run: |
@@ -36,6 +36,10 @@ jobs:
       - name: Run unit tests
         run: |
           pytest --cov=trollsift trollsift/tests --cov-report=xml
+
+      - name: Run mypy
+        run: |
+          mypy trollsift
 
       - name: Upload unittest coverage to Codecov
         uses: codecov/codecov-action@v5
