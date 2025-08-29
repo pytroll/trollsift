@@ -38,4 +38,3 @@ To check if your python setup is compatible with trollsift,
 you can run the test suite using pytest::
 
   $ pytest trollsift/tests
-

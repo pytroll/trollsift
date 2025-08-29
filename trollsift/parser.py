@@ -29,7 +29,7 @@ import typing
 if typing.TYPE_CHECKING:
     from _typeshed import StrOrLiteralStr
     from typing import Any
-    from collections.abc import Iterator, Iterable, Sequence, Mapping
+    from collections.abc import Iterable, Sequence, Mapping
 
 
 class Parser:
