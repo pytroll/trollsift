@@ -6,7 +6,7 @@ on:
       - published
 
 jobs:
-  test:
+  sdist:
     runs-on: ubuntu-latest
 
     steps:
