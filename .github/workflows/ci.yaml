@@ -9,7 +9,7 @@ jobs:
       fail-fast: true
       matrix:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.13"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -U codecov pytest pytest-cov
+          pip install -U codecov pytest pytest-cov mypy
 
       - name: Install trollsift
         run: |
@@ -37,10 +37,13 @@ jobs:
         run: |
           pytest --cov=trollsift trollsift/tests --cov-report=xml
 
+      - name: Run mypy
+        run: |
+          mypy trollsift
+
       - name: Upload unittest coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           flags: unittests
-          file: ./coverage.xml
+          files: ./coverage.xml
           env_vars: OS,PYTHON_VERSION
-

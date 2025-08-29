@@ -15,4 +15,3 @@ build:
     python: "mambaforge-4.10"
 conda:
   environment: doc/rtd_environment.yaml
-

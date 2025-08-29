@@ -11,14 +11,14 @@ the library is useful for extracting typical information from granule filenames,
 as observation time, platform and instrument names. The trollsift Parser can also
 verify that the string formatting is invertible, i.e. specific enough to ensure that
 parsing and composing of strings are bijective mappings ( aka one-to-one correspondence )
-which may be essential for some applications, such as predicting granule 
+which may be essential for some applications, such as predicting granule
 
 parsing
 ^^^^^^^
 The Parser object holds a format string, allowing us to parse and compose strings:
 
   >>> from trollsift import Parser
-  >>> 
+  >>>
   >>> p = Parser("/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b")
   >>> data = p.parse("/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b")
   >>> print(data) # doctest: +NORMALIZE_WHITESPACE
@@ -82,6 +82,3 @@ depending on your requirements you can call,
   '/somedir/otherdir/hrpt_noaa16_20120101_0101_69022.l1b'
 
 And achieve the exact same result as in the Parse object example above.
-
-
-

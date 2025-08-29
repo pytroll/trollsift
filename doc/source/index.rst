@@ -11,7 +11,7 @@ Welcome to the trollsift documentation!
 =========================================
 
 Trollsift is a collection of modules that assist with formatting, parsing
-and filtering satellite granule file names. These modules are useful and necessary 
+and filtering satellite granule file names. These modules are useful and necessary
 for writing higher level applications and api's for satellite batch processing.
 
 The source code of the package can be found at github, github_
@@ -34,4 +34,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

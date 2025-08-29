@@ -29,7 +29,7 @@ import typing
 if typing.TYPE_CHECKING:
     from _typeshed import StrOrLiteralStr
     from typing import Any
-    from collections.abc import Iterator, Iterable, Sequence, Mapping
+    from collections.abc import Iterable, Sequence, Mapping
 
 
 class Parser:
@@ -147,12 +147,7 @@ class StringFormatter(string.Formatter):
             return super(StringFormatter, self).convert_field(value, conversion)
 
         if conversion in ["h", "H", "R"]:
-            value = (
-                value.replace("-", "")
-                .replace("_", "")
-                .replace(":", "")
-                .replace(" ", "")
-            )
+            value = value.replace("-", "").replace("_", "").replace(":", "").replace(" ", "")
         return value
 
 
@@ -245,10 +240,10 @@ class RegexFormatter(string.Formatter):
         # hold on to fields we've seen already so we can reuse their
         # definitions in the regex
         self._cached_fields = {}
+        self.format = lru_cache()(self._uncached_format)
         super(RegexFormatter, self).__init__()
 
-    @lru_cache()
-    def format(*args, **kwargs):
+    def _uncached_format(*args, **kwargs):
         try:
             # super() doesn't seem to work here
             ret_val = string.Formatter.format(*args, **kwargs)
@@ -285,9 +280,7 @@ class RegexFormatter(string.Formatter):
             literal_text = self._escape(literal_text)
             yield literal_text, field_name, format_spec, conversion
 
-    def get_value(
-        self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]
-    ) -> Any:
+    def get_value(self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(RegexFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -306,58 +299,12 @@ class RegexFormatter(string.Formatter):
             replace_str = replace_str.replace(fmt_key, regex)
         return replace_str
 
-    @staticmethod
-    def format_spec_to_regex(field_name: str, format_spec: str) -> str:
-        """Make an attempt at converting a format spec to a regular expression."""
-        # NOTE: remove escaped backslashes so regex matches
-        regex_match = fmt_spec_regex.match(format_spec.replace("\\", ""))
-        if regex_match is None:
-            raise ValueError("Invalid format specification: '{}'".format(format_spec))
-        regex_dict = regex_match.groupdict()
-        fill = regex_dict["fill"]
-        ftype = regex_dict["type"]
-        width = regex_dict["width"]
-        align = regex_dict["align"]
-        precision = regex_dict["precision"]
-        # NOTE: does not properly handle `=` alignment
-        if fill is None:
-            if width is not None and width[0] == "0":
-                fill = "0"
-            elif ftype in ["s", "", "d", "x", "X", "o", "b"]:
-                fill = " "
-
-        char_type = spec_regexes[ftype]
-        if ftype in fixed_point_types:
-            char_type = _get_fixed_point_regex(width=width, precision=precision)
-        if ftype in ("s", "") and align and align.endswith("="):
-            raise ValueError("Invalid format specification: '{}'".format(format_spec))
-        final_regex = char_type
-        if ftype in allow_multiple and (not width or width == "0"):
-            final_regex += r"*?"
-        elif width and width != "0":
-            if not fill and ftype not in fixed_point_types:
-                # we know we have exactly this many characters
-                final_regex += r"{{{}}}".format(int(width))
-            elif fill:
-                # we don't know how many fill characters we have compared to
-                # field characters so just match all characters and sort it out
-                # later during type conversion.
-                final_regex = r".{{{}}}".format(int(width))
-            elif ftype in allow_multiple:
-                final_regex += r"*?"
-
-        return r"(?P<{}>{})".format(field_name, final_regex)
-
     def regex_field(self, field_name: str, value: Any, format_spec: str) -> str:
         if value != self.UNPROVIDED_VALUE:
             return super(RegexFormatter, self).format_field(value, format_spec)
 
         if self._cached_fields.get(field_name, format_spec) != format_spec:
-            raise ValueError(
-                "Can't specify the same field_name with different formats: {}".format(
-                    field_name
-                )
-            )
+            raise ValueError("Can't specify the same field_name with different formats: {}".format(field_name))
         elif field_name in self._cached_fields:
             return r"(?P={})".format(field_name)
         else:
@@ -368,13 +315,59 @@ class RegexFormatter(string.Formatter):
             return r"(?P<{}>.*?)".format(field_name)
         if "%" in format_spec:
             return r"(?P<{}>{})".format(field_name, self._regex_datetime(format_spec))
-        return self.format_spec_to_regex(field_name, format_spec)
+        return format_spec_to_regex(field_name, format_spec)
 
     def format_field(self, value: Any, format_spec: str) -> str:
         if not isinstance(value, tuple) or value[1] != self.UNPROVIDED_VALUE:
             return super(RegexFormatter, self).format_field(value, format_spec)
         field_name, value = value
         return self.regex_field(field_name, value, format_spec)
+
+
+def format_spec_to_regex(field_name: str, format_spec: str) -> str:
+    """Make an attempt at converting a format spec to a regular expression."""
+    # NOTE: remove escaped backslashes so regex matches
+    regex_match = fmt_spec_regex.match(format_spec.replace("\\", ""))
+    if regex_match is None:
+        raise ValueError("Invalid format specification: '{}'".format(format_spec))
+    regex_dict = regex_match.groupdict()
+    ftype = regex_dict["type"]
+    width = regex_dict["width"]
+    align = regex_dict["align"]
+    precision = regex_dict["precision"]
+    fill = _get_fill(regex_dict["fill"], width, ftype)
+
+    char_type = spec_regexes[ftype]
+    if ftype in fixed_point_types:
+        char_type = _get_fixed_point_regex(width=width, precision=precision)
+    if ftype in ("s", "") and align and align.endswith("="):
+        raise ValueError("Invalid format specification: '{}'".format(format_spec))
+    final_regex = char_type
+    if ftype in allow_multiple and (not width or width == "0"):
+        final_regex += r"*?"
+    elif width and width != "0":
+        if not fill and ftype not in fixed_point_types:
+            # we know we have exactly this many characters
+            final_regex += r"{{{}}}".format(int(width))
+        elif fill:
+            # we don't know how many fill characters we have compared to
+            # field characters so just match all characters and sort it out
+            # later during type conversion.
+            final_regex = r".{{{}}}".format(int(width))
+        elif ftype in allow_multiple:
+            final_regex += r"*?"
+
+    return r"(?P<{}>{})".format(field_name, final_regex)
+
+
+def _get_fill(fill: str | None, width: str | None, ftype: str | None) -> str | None:
+    # NOTE: does not properly handle `=` alignment
+    if fill is None:
+        if width is not None and width[0] == "0":
+            fill = "0"
+        elif ftype in ["s", "", "d", "x", "X", "o", "b"]:
+            fill = " "
+    return fill
 
 
 @lru_cache()
@@ -435,9 +428,7 @@ def _convert(convdef: str, stri: str) -> Any:
             result = int(result, 8)
         elif "b" in convdef:
             result = int(result, 2)
-        elif any(
-            float_type_marker in convdef for float_type_marker in fixed_point_types
-        ):
+        elif any(float_type_marker in convdef for float_type_marker in fixed_point_types):
             result = float(result)
 
     return result
@@ -472,7 +463,7 @@ def _strip_padding(convdef: str, stri: str) -> str:
 def get_convert_dict(fmt: str) -> dict[str, str]:
     """Retrieve parse definition from the format string `fmt`."""
     convdef = {}
-    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+    for _literal_text, field_name, format_spec, _conversion in formatter.parse(fmt):
         if field_name is None or format_spec is None:
             continue
         # XXX: Do I need to include 'conversion'?
@@ -550,9 +541,7 @@ class GlobifyFormatter(string.Formatter):
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = "<trollsift unprovided value>"
 
-    def get_value(
-        self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]
-    ) -> Any:
+    def get_value(self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(GlobifyFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -589,9 +578,7 @@ globify_formatter = GlobifyFormatter()
 
 
 def globify(fmt: str, keyvals: Mapping[str, Any] | None = None) -> Any:
-    """Generate a string usable with glob.glob() from format string
-    *fmt* and *keyvals* dictionary.
-    """
+    """Generate a string usable with glob.glob() from format string and provided information."""
     if keyvals is None:
         keyvals = {}
     return globify_formatter.format(fmt, **keyvals)
@@ -610,7 +597,7 @@ def validate(fmt: str, stri: str) -> bool:
         return False
 
 
-def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
+def _generate_data_for_format(fmt: str) -> dict[str, Any]:
     """Generate a fake data dictionary to fill in the provided format string."""
     # finally try some data, create some random data for the fmt.
     data = {}
@@ -618,7 +605,7 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
     # if we get two in a row then we know the pattern is invalid, meaning
     # we'll never be able to match the second wildcard field
     free_size_start = False
-    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+    for literal_text, field_name, format_spec, _conversion in formatter.parse(fmt):
         if literal_text:
             free_size_start = False
 
@@ -630,47 +617,50 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
         # e.g. {:s}{:s} or {:s}{:4s}{:d}
         if not format_spec or format_spec == "s" or format_spec == "d":
             if free_size_start:
-                return None
+                raise ValueError("Can't generate data for spec with two or more fields with no size specifier.")
             else:
                 free_size_start = True
 
         # make some data for this key and format
-        if format_spec and "%" in format_spec:
-            # some datetime
-            t = dt.datetime.now()
-            # run once through format to limit precision
-            t = parse(
-                "{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {"t": t})
-            )["t"]
-            data[field_name] = t
-        elif format_spec and "d" in format_spec:
-            # random number (with n sign. figures)
-            if not format_spec.isalpha():
-                n = _get_number_from_fmt(format_spec)
-            else:
-                # clearly bad
-                return None
-            data[field_name] = random.randint(0, 99999999999999999) % (10**n)
-        else:
-            # string type
-            if format_spec is None:
-                n = 4
-            elif format_spec.isalnum():
-                n = _get_number_from_fmt(format_spec)
-            else:
-                n = 4
-            randstri = ""
-            for x in range(n):
-                randstri += random.choice(string.ascii_letters)
-            data[field_name] = randstri
+        data[field_name] = _gen_data_for_spec(format_spec)
     return data
 
 
+def _gen_data_for_spec(format_spec: str | None) -> int | str | dt.datetime:
+    if format_spec and "%" in format_spec:
+        # some datetime
+        t = dt.datetime.now()
+        # run once through format to limit precision
+        t = parse("{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {"t": t}))["t"]
+        return t
+
+    if format_spec and "d" in format_spec:
+        # random number (with n sign. figures)
+        if not format_spec.isalpha():
+            n = _get_number_from_fmt(format_spec)
+        else:
+            # clearly bad
+            raise ValueError(f"Bad format specification: {format_spec!r}")
+        return random.randint(0, 99999999999999999) % (10**n)
+
+    # string type
+    if format_spec is None:
+        n = 4
+    elif format_spec.isalnum():
+        n = _get_number_from_fmt(format_spec)
+    else:
+        n = 4
+    randstri = ""
+    for _ in range(n):
+        randstri += random.choice(string.ascii_letters)
+    return randstri
+
+
 def is_one2one(fmt: str) -> bool:
-    """
-    Runs a check to evaluate if the format string has a
-    one to one correspondence.  I.e. that successive composing and
-    parsing opperations will result in the original data.
+    """Check if the format string has a one to one correspondence.
+
+    That is, that successive composing and
+    parsing operations will result in the original data.
     In other words, that input data maps to a string,
     which then maps back to the original data without any change
     or loss in information.
@@ -681,8 +671,9 @@ def is_one2one(fmt: str) -> bool:
     be broken in such cases. This of course also applies to precision
     losses when using  datetime data.
     """
-    data = _generate_data_for_format(fmt)
-    if data is None:
+    try:
+        data = _generate_data_for_format(fmt)
+    except ValueError:
         return False
 
     # run data forward once and back to data
@@ -747,10 +738,7 @@ def _replace_undefined_params_with_placeholders(
     undefined_vars_placeholders_dict = {}
     new_fmt = fmt
     for var in sorted(vars_left_undefined):
-        matches = set(
-            match.group()
-            for match in re.finditer(rf"{{{re.escape(var)}([^\w{{}}].*?)*}}", new_fmt)
-        )
+        matches = set(match.group() for match in re.finditer(rf"{{{re.escape(var)}([^\w{{}}].*?)*}}", new_fmt))
         if len(matches) == 0:
             raise ValueError(f"Could not capture definitions for {var} from {fmt}")
         for var_specification in matches:
