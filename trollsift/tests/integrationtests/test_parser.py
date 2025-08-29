@@ -26,10 +26,7 @@ from trollsift.parser import Parser
 
 class TestParser(unittest.TestCase):
     def setUp(self):
-        self.fmt = (
-            "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}"
-            + "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
-        )
+        self.fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}" + "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
         self.string = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b"
         self.data = {
             "directory": "otherdir",
@@ -66,13 +63,9 @@ class TestParser(unittest.TestCase):
 
     def test_validate(self):
         # These cases are True
-        self.assertTrue(
-            self.p.validate("/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
-        )
+        self.assertTrue(self.p.validate("/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b"))
         # These cases are False
-        self.assertFalse(
-            self.p.validate("/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b")
-        )
+        self.assertFalse(self.p.validate("/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b"))
 
     def assertDictEqual(self, a, b):
         for key in a:
@@ -92,7 +85,10 @@ class TestParser(unittest.TestCase):
 
 class TestParserVariousFormats(unittest.TestCase):
     def test_parse_viirs_sdr(self):
-        fmt = "SVI01_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time:%Y%m%d%H%M%S%f}_{source}.h5"
+        fmt = (
+            "SVI01_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_"
+            "e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time:%Y%m%d%H%M%S%f}_{source}.h5"
+        )
         filename = "SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5"
         data = {
             "platform_shortname": "npp",
@@ -107,8 +103,15 @@ class TestParserVariousFormats(unittest.TestCase):
         self.assertDictEqual(result, data)
 
     def test_parse_iasi_l2(self):
-        fmt = "W_XX-EUMETSAT-{reception_location},{instrument},{long_platform_id}+{processing_location}_C_EUMS_{processing_time:%Y%m%d%H%M%S}_IASI_PW3_02_{platform_id}_{start_time:%Y%m%d-%H%M%S}Z_{end_time:%Y%m%d.%H%M%S}Z.hdf"
-        filename = "W_XX-EUMETSAT-kan,iasi,metopb+kan_C_EUMS_20170920103559_IASI_PW3_02_M01_20170920-102217Z_20170920.102912Z.hdf"
+        fmt = (
+            "W_XX-EUMETSAT-{reception_location},{instrument},{long_platform_id}+{processing_location}_"
+            "C_EUMS_{processing_time:%Y%m%d%H%M%S}_IASI_PW3_02_{platform_id}_{start_time:%Y%m%d-%H%M%S}Z_"
+            "{end_time:%Y%m%d.%H%M%S}Z.hdf"
+        )
+        filename = (
+            "W_XX-EUMETSAT-kan,iasi,metopb+kan_C_EUMS_20170920103559_IASI_PW3_02_"
+            "M01_20170920-102217Z_20170920.102912Z.hdf"
+        )
         data = {
             "reception_location": "kan",
             "instrument": "iasi",
@@ -133,10 +136,7 @@ class TestParserVariousFormats(unittest.TestCase):
         )
         # made up:
         filename = os.path.join(
-            "S3A_OL_1_EFR____20180916T090539_"
-            "20180916T090839_20180916T090539_0001_"
-            "001_001_0001_CEN_M_"
-            "AA_AAA.SEN3",
+            "S3A_OL_1_EFR____20180916T090539_20180916T090839_20180916T090539_0001_001_001_0001_CEN_M_AA_AAA.SEN3",
             "Oa21_radiance.nc",
         )
         data = {

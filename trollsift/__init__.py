@@ -7,7 +7,7 @@ except ModuleNotFoundError:  # pragma: no cover
         "No module named trollsift.version. This could mean "
         "you didn't install 'trollsift' properly. Try reinstalling ('pip "
         "install')."
-    )
+    ) from None
 
 __all__ = [
     "Parser",
