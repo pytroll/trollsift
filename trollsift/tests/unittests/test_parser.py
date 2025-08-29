@@ -1,3 +1,5 @@
+"""Basic unit tests for the parser module."""
+
 import unittest
 import datetime as dt
 import pytest
@@ -9,10 +11,7 @@ from trollsift.parser import parse, globify, validate, is_one2one, compose, Pars
 
 class TestParser(unittest.TestCase):
     def setUp(self):
-        self.fmt = (
-            "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}"
-            + "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
-        )
+        self.fmt = "/somedir/{directory}/hrpt_{platform:4s}{platnum:2s}" + "_{time:%Y%m%d_%H%M}_{orbit:05d}.l1b"
         self.string = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022.l1b"
         self.string2 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_00022.l1b"
         self.string3 = "/somedir/otherdir/hrpt_noaa16_20140210_1004_69022"
@@ -170,15 +169,11 @@ class TestParser(unittest.TestCase):
         self.assertEqual(_convert("d", "00022"), 22)
         self.assertEqual(_convert("4d", "69022"), 69022)
         self.assertEqual(_convert("_>10d", "_____69022"), 69022)
-        self.assertEqual(
-            _convert("%Y%m%d_%H%M", "20140210_1004"), dt.datetime(2014, 2, 10, 10, 4)
-        )
+        self.assertEqual(_convert("%Y%m%d_%H%M", "20140210_1004"), dt.datetime(2014, 2, 10, 10, 4))
 
     def test_parse(self):
         # Run
-        result = parse(
-            self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b"
-        )
+        result = parse(self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b")
         # Assert
         self.assertDictEqual(
             result,
@@ -223,10 +218,11 @@ class TestParser(unittest.TestCase):
         )
 
     def test_parse_align(self):
-        filepattern = "H-000-{hrit_format:4s}__-{platform_name:4s}________-{channel_name:_<9s}-{segment:_<9s}-{start_time:%Y%m%d%H%M}-__"
-        result = parse(
-            filepattern, "H-000-MSG3__-MSG3________-IR_039___-000007___-201506051700-__"
+        filepattern = (
+            "H-000-{hrit_format:4s}__-{platform_name:4s}________-"
+            "{channel_name:_<9s}-{segment:_<9s}-{start_time:%Y%m%d%H%M}-__"
         )
+        result = parse(filepattern, "H-000-MSG3__-MSG3________-IR_039___-000007___-201506051700-__")
         self.assertDictEqual(
             result,
             {
@@ -358,60 +354,24 @@ class TestParser(unittest.TestCase):
 
     def test_validate(self):
         # These cases are True
-        self.assertTrue(
-            validate(
-                self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b"
-            )
-        )
-        self.assertTrue(
-            validate(
-                self.fmt, "/somedir/avhrr/2014/hrpt_noaa01_19790530_0705_00000.l1b"
-            )
-        )
-        self.assertTrue(
-            validate(
-                self.fmt, "/somedir/funny-char$dir/hrpt_noaa19_20140212_1412_12345.l1b"
-            )
-        )
-        self.assertTrue(
-            validate(self.fmt, "/somedir//hrpt_noaa19_20140212_1412_12345.l1b")
-        )
+        self.assertTrue(validate(self.fmt, "/somedir/avhrr/2014/hrpt_noaa19_20140212_1412_12345.l1b"))
+        self.assertTrue(validate(self.fmt, "/somedir/avhrr/2014/hrpt_noaa01_19790530_0705_00000.l1b"))
+        self.assertTrue(validate(self.fmt, "/somedir/funny-char$dir/hrpt_noaa19_20140212_1412_12345.l1b"))
+        self.assertTrue(validate(self.fmt, "/somedir//hrpt_noaa19_20140212_1412_12345.l1b"))
         # These cases are False
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_1A345.l1b")
-        )
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_2014021_1412_00000.l1b")
-        )
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__412_00000.l1b")
-        )
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b")
-        )
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1")
-        )
-        self.assertFalse(
-            validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000")
-        )
-        self.assertFalse(
-            validate(self.fmt, "{}/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1b")
-        )
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_1A345.l1b"))
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_2014021_1412_00000.l1b"))
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__412_00000.l1b"))
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212__1412_00000.l1b"))
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1"))
+        self.assertFalse(validate(self.fmt, "/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000"))
+        self.assertFalse(validate(self.fmt, "{}/somedir/bla/bla/hrpt_noaa19_20140212_1412_00000.l1b"))
 
     def test_is_one2one(self):
         # These cases are True
-        self.assertTrue(
-            is_one2one(
-                "/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:5d}.l1b"
-            )
-        )
+        self.assertTrue(is_one2one("/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:5d}.l1b"))
         # These cases are False
-        self.assertFalse(
-            is_one2one(
-                "/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:d}.l1b"
-            )
-        )
+        self.assertFalse(is_one2one("/somedir/{directory}/somedata_{platform:4s}_{time:%Y%d%m-%H%M}_{orbit:d}.l1b"))
 
     def test_greediness(self):
         """Test that the minimum match is parsed out.
@@ -487,23 +447,15 @@ class TestCompose:
 
     def test_partial_compose_with_similarly_named_params(self):
         """Test that partial compose handles well vars with common substrings in name."""
-        original_fmt = (
-            "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
-        )
-        composed = compose(
-            fmt=original_fmt, keyvals={"afooo": "qux"}, allow_partial=True
-        )
-        assert (
-            composed == "{foo}qux{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
-        )
+        original_fmt = "{foo}{afooo}{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
+        composed = compose(fmt=original_fmt, keyvals={"afooo": "qux"}, allow_partial=True)
+        assert composed == "{foo}qux{fooo}.{bar}/{baz:%Y}/{baz:%Y%m%d_%H}/{baz:%Y}/{bar:d}"
 
     def test_partial_compose_repeated_vars_with_different_formatting(self):
         """Test partial compose with a fmt with repeated vars with different formatting."""
         fmt = "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.{format}"
         composed = compose(fmt=fmt, keyvals={"format": "qux"}, allow_partial=True)
-        assert (
-            composed == "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.qux"
-        )
+        assert composed == "/foo/{start_time:%Y%m}/bar/{baz}_{start_time:%Y%m%d_%H%M}.qux"
 
     @pytest.mark.parametrize(
         "original_fmt",
@@ -556,7 +508,6 @@ class TestParserFixedPoint:
     )
     def test_match(self, allow_partial_compose, fmt, string, expected):
         """Test cases expected to be matched."""
-
         # Test parsed value
         parsed = parse(fmt, string)
         assert parsed["foo"] == expected

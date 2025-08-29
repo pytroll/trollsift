@@ -147,12 +147,7 @@ class StringFormatter(string.Formatter):
             return super(StringFormatter, self).convert_field(value, conversion)
 
         if conversion in ["h", "H", "R"]:
-            value = (
-                value.replace("-", "")
-                .replace("_", "")
-                .replace(":", "")
-                .replace(" ", "")
-            )
+            value = value.replace("-", "").replace("_", "").replace(":", "").replace(" ", "")
         return value
 
 
@@ -245,10 +240,10 @@ class RegexFormatter(string.Formatter):
         # hold on to fields we've seen already so we can reuse their
         # definitions in the regex
         self._cached_fields = {}
+        self.format = lru_cache()(self._uncached_format)
         super(RegexFormatter, self).__init__()
 
-    @lru_cache()
-    def format(*args, **kwargs):
+    def _uncached_format(*args, **kwargs):
         try:
             # super() doesn't seem to work here
             ret_val = string.Formatter.format(*args, **kwargs)
@@ -285,9 +280,7 @@ class RegexFormatter(string.Formatter):
             literal_text = self._escape(literal_text)
             yield literal_text, field_name, format_spec, conversion
 
-    def get_value(
-        self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]
-    ) -> Any:
+    def get_value(self, key: int | str, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(RegexFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -353,11 +346,7 @@ class RegexFormatter(string.Formatter):
             return super(RegexFormatter, self).format_field(value, format_spec)
 
         if self._cached_fields.get(field_name, format_spec) != format_spec:
-            raise ValueError(
-                "Can't specify the same field_name with different formats: {}".format(
-                    field_name
-                )
-            )
+            raise ValueError("Can't specify the same field_name with different formats: {}".format(field_name))
         elif field_name in self._cached_fields:
             return r"(?P={})".format(field_name)
         else:
@@ -435,9 +424,7 @@ def _convert(convdef: str, stri: str) -> Any:
             result = int(result, 8)
         elif "b" in convdef:
             result = int(result, 2)
-        elif any(
-            float_type_marker in convdef for float_type_marker in fixed_point_types
-        ):
+        elif any(float_type_marker in convdef for float_type_marker in fixed_point_types):
             result = float(result)
 
     return result
@@ -472,7 +459,7 @@ def _strip_padding(convdef: str, stri: str) -> str:
 def get_convert_dict(fmt: str) -> dict[str, str]:
     """Retrieve parse definition from the format string `fmt`."""
     convdef = {}
-    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+    for _literal_text, field_name, format_spec, _conversion in formatter.parse(fmt):
         if field_name is None or format_spec is None:
             continue
         # XXX: Do I need to include 'conversion'?
@@ -550,9 +537,7 @@ class GlobifyFormatter(string.Formatter):
     # special string to mark a parameter not being specified
     UNPROVIDED_VALUE = "<trollsift unprovided value>"
 
-    def get_value(
-        self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]
-    ) -> Any:
+    def get_value(self, key: str | int, args: Sequence[Any], kwargs: Mapping[str, Any]) -> Any:
         try:
             return super(GlobifyFormatter, self).get_value(key, args, kwargs)
         except (IndexError, KeyError):
@@ -589,9 +574,7 @@ globify_formatter = GlobifyFormatter()
 
 
 def globify(fmt: str, keyvals: Mapping[str, Any] | None = None) -> Any:
-    """Generate a string usable with glob.glob() from format string
-    *fmt* and *keyvals* dictionary.
-    """
+    """Generate a string usable with glob.glob() from format string and provided information."""
     if keyvals is None:
         keyvals = {}
     return globify_formatter.format(fmt, **keyvals)
@@ -618,7 +601,7 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
     # if we get two in a row then we know the pattern is invalid, meaning
     # we'll never be able to match the second wildcard field
     free_size_start = False
-    for literal_text, field_name, format_spec, conversion in formatter.parse(fmt):
+    for literal_text, field_name, format_spec, _conversion in formatter.parse(fmt):
         if literal_text:
             free_size_start = False
 
@@ -639,9 +622,7 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
             # some datetime
             t = dt.datetime.now()
             # run once through format to limit precision
-            t = parse(
-                "{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {"t": t})
-            )["t"]
+            t = parse("{t:" + format_spec + "}", compose("{t:" + format_spec + "}", {"t": t}))["t"]
             data[field_name] = t
         elif format_spec and "d" in format_spec:
             # random number (with n sign. figures)
@@ -660,17 +641,17 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
             else:
                 n = 4
             randstri = ""
-            for x in range(n):
+            for _ in range(n):
                 randstri += random.choice(string.ascii_letters)
             data[field_name] = randstri
     return data
 
 
 def is_one2one(fmt: str) -> bool:
-    """
-    Runs a check to evaluate if the format string has a
-    one to one correspondence.  I.e. that successive composing and
-    parsing opperations will result in the original data.
+    """Check if the format string has a one to one correspondence.
+
+    That is, that successive composing and
+    parsing operations will result in the original data.
     In other words, that input data maps to a string,
     which then maps back to the original data without any change
     or loss in information.
@@ -747,10 +728,7 @@ def _replace_undefined_params_with_placeholders(
     undefined_vars_placeholders_dict = {}
     new_fmt = fmt
     for var in sorted(vars_left_undefined):
-        matches = set(
-            match.group()
-            for match in re.finditer(rf"{{{re.escape(var)}([^\w{{}}].*?)*}}", new_fmt)
-        )
+        matches = set(match.group() for match in re.finditer(rf"{{{re.escape(var)}([^\w{{}}].*?)*}}", new_fmt))
         if len(matches) == 0:
             raise ValueError(f"Could not capture definitions for {var} from {fmt}")
         for var_specification in matches:
