@@ -360,7 +360,7 @@ def format_spec_to_regex(field_name: str, format_spec: str) -> str:
     return r"(?P<{}>{})".format(field_name, final_regex)
 
 
-def _get_fill(fill: str | None, width: str | None, ftype: str | None) -> str:
+def _get_fill(fill: str | None, width: str | None, ftype: str | None) -> str | None:
     # NOTE: does not properly handle `=` alignment
     if fill is None:
         if width is not None and width[0] == "0":
@@ -597,7 +597,7 @@ def validate(fmt: str, stri: str) -> bool:
         return False
 
 
-def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
+def _generate_data_for_format(fmt: str) -> dict[str, Any]:
     """Generate a fake data dictionary to fill in the provided format string."""
     # finally try some data, create some random data for the fmt.
     data = {}
@@ -617,7 +617,7 @@ def _generate_data_for_format(fmt: str) -> dict[str, Any] | None:
         # e.g. {:s}{:s} or {:s}{:4s}{:d}
         if not format_spec or format_spec == "s" or format_spec == "d":
             if free_size_start:
-                return None
+                raise ValueError("Can't generate data for spec with two or more fields with no size specifier.")
             else:
                 free_size_start = True
 
