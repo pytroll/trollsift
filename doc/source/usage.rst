@@ -11,7 +11,7 @@ the library is useful for extracting typical information from granule filenames,
 as observation time, platform and instrument names. The trollsift Parser can also
 verify that the string formatting is invertible, i.e. specific enough to ensure that
 parsing and composing of strings are bijective mappings ( aka one-to-one correspondence )
-which may be essential for some applications, such as predicting granule
+which may be essential for some applications, such as predicting granule filenames.
 
 parsing
 ^^^^^^^
