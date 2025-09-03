@@ -22,7 +22,7 @@
 6. push changes to github `git push --follow-tags`
 7. Verify tests pass on GitHub Actions
 8. Create a "Release" on GitHub by going to
-   https://github.com/pytroll/pyresample/releases and clicking "Draft a new release".
+   https://github.com/pytroll/trollsift/releases and clicking "Draft a new release".
    On the next page enter the newly created tag in the "Tag version" field,
    "Version X.Y.Z" in the "Release title" field, and paste the markdown from
    the changelog (the portion under the version section header) in the
