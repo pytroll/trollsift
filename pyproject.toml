@@ -13,7 +13,8 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Topic :: Scientific/Engineering"
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
 ]
 keywords = ["string parsing", "string formatting", "pytroll"]
 requires-python = ">=3.9"

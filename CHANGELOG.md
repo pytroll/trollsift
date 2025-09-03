@@ -1,5 +1,25 @@
-## Version 0.5.3 (2024/12/03)
+## Version 0.6.0 (2025/09/03)
 
+### Issues Closed
+
+* [Issue 7](https://github.com/pytroll/trollsift/issues/7) - Switch accepted arguments for parser methods to args and kwargs
+
+In this release 1 issue was closed.
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 81](https://github.com/pytroll/trollsift/pull/81) - Add pre-commit with ruff and ruff format
+
+#### Features added
+
+* [PR 80](https://github.com/pytroll/trollsift/pull/80) - Add type annotations
+
+In this release 2 pull requests were closed.
+
+
+## Version 0.5.3 (2024/12/03)
 
 ### Pull Requests Merged
 
