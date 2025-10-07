@@ -6,7 +6,7 @@ readme = "README.rst"
 authors = [
     { name = "The Pytroll Team", email = "pytroll@googlegroups.com" }
 ]
-license = "GPL-3.0-or-later"
+license = "Apache-2.0"
 license-files = ["LICENSE.txt"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
