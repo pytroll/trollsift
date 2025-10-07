@@ -1,3 +1,21 @@
+## Version 1.0.0 (2025/10/07)
+
+### Issues Closed
+
+* [Issue 85](https://github.com/pytroll/trollsift/issues/85) - Relicense to Apache Version 2 ([PR 87](https://github.com/pytroll/trollsift/pull/87) by [@mraspaud](https://github.com/mraspaud))
+* [Issue 84](https://github.com/pytroll/trollsift/issues/84) - Missing `trollsift.formatter` in v0.6.0
+
+In this release 2 issues were closed.
+
+### Pull Requests Merged
+
+#### Features added
+
+* [PR 87](https://github.com/pytroll/trollsift/pull/87) - Relicense to apache v2.0 ([85](https://github.com/pytroll/trollsift/issues/85))
+
+In this release 1 pull request was closed.
+
+
 ## Version 0.6.0 (2025/09/03)
 
 ### Issues Closed
