@@ -1,4 +1,4 @@
-# Project Contributors
+# Trollsift developers
 
 The following people have made contributions to this project:
 
