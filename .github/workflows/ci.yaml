@@ -42,7 +42,7 @@ jobs:
           mypy trollsift
 
       - name: Upload unittest coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           flags: unittests
           files: ./coverage.xml
