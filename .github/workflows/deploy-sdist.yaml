@@ -8,6 +8,9 @@ on:
 jobs:
   sdist:
     runs-on: ubuntu-latest
+    environment: "PyPI Deploy"
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout source
@@ -22,6 +25,3 @@ jobs:
       - name: Publish package to PyPI
         if: github.event.action == 'published'
         uses: pypa/gh-action-pypi-publish@v1.14.0
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
