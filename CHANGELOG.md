@@ -1,3 +1,14 @@
+## Version 1.0.1 (2026/06/01)
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 99](https://github.com/pytroll/trollsift/pull/99) - Switch to trusted publisher for PyPI uploads
+
+In this release 1 pull request was closed.
+
+
 ## Version 1.0.0 (2025/10/07)
 
 ### Issues Closed
