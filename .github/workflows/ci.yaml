@@ -35,7 +35,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest --cov=trollsift trollsift/tests --cov-report=xml
+          pytest --cov=trollsift trollsift --cov-report=xml
 
       - name: Run mypy
         run: |

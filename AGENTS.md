@@ -135,8 +135,3 @@ Already known. Don't rediscover them, and don't "fix" them as a drive-by in an u
 - `_convert` type-sniffs with `in` against the whole spec, so a fill character like `d`, `x`
   or `f` can misroute conversion (e.g. `{foo:d>5s}`).
 - `_get_fill` does not handle `=` alignment; there is a code comment saying so.
-- `MANIFEST.in` and `.gitattributes` still reference versioneer, which has been removed.
-- `doc/source/conf.py` hardcodes `version = "0.1"`, and `doc/rtd_environment.yaml`'s comment
-  still says "satpy".
-- Ruff's per-file test ignores use the glob `trollsift/tests/*.py`, but the tests live one
-  directory deeper, so those ignores do not actually apply.
