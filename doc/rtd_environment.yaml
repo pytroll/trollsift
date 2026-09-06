@@ -10,4 +10,4 @@ dependencies:
   - sphinxcontrib-apidoc
   - pip:
     - graphviz
-    - ..  # relative path to the satpy project
+    - ..  # relative path to the trollsift project
