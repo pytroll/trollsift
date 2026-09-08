@@ -12,7 +12,7 @@ import typing
 if typing.TYPE_CHECKING:
     from _typeshed import StrOrLiteralStr
     from typing import Any
-    from collections.abc import Iterable, Sequence, Mapping
+    from collections.abc import Callable, Iterable, Sequence, Mapping
 
 
 class Parser:
@@ -193,6 +193,23 @@ def _get_fixed_point_regex(width: str | None, precision: str | None) -> str:
         return spec_regexes["f"]
 
 
+def _apply_between_percent_escapes(format_spec: str, func: Callable[[str], str], join: str = "%") -> str:
+    """Apply ``func`` to each chunk of a datetime format spec between ``%%`` escapes.
+
+    A ``%%`` is a literal '%', so the chunks around it have to be rewritten one at a
+    time. Rewriting the whole spec at once lets a directive replacement consume a
+    character belonging to the literal: the ``%m`` in ``"%Y%%m"`` is not a month.
+
+    Args:
+        format_spec: Datetime format spec to rewrite (ex. ``"%Y%%m"``)
+        func: Called with each chunk of the spec between ``%%`` escapes
+        join: Put between the rewritten chunks in place of each ``%%``. Defaults to
+            a literal '%', for when the result is a finished regular expression or
+            glob pattern. Pass ``"%%"`` if the result is still a format spec.
+    """
+    return join.join(func(chunk) for chunk in format_spec.split("%%"))
+
+
 class RegexFormatter(string.Formatter):
     """String formatter that converts a format string to a regular expression.
 
@@ -276,17 +293,7 @@ class RegexFormatter(string.Formatter):
             return key, self.UNPROVIDED_VALUE
 
     def _regex_datetime(self, format_spec: str) -> str:
-        replace_str = format_spec
-        for fmt_key, fmt_val in DT_FMT.items():
-            if fmt_key == "%%":
-                # special case
-                replace_str.replace("%%", "%")
-                continue
-            count = fmt_val.count("?")
-            # either a series of numbers or letters/numbers
-            regex = r"\d{{{:d}}}".format(count) if count else r"[^ \t\n\r\f\v\-_:]+"
-            replace_str = replace_str.replace(fmt_key, regex)
-        return replace_str
+        return _apply_between_percent_escapes(format_spec, _regex_datetime_directives)
 
     def regex_field(self, field_name: str, value: Any, format_spec: str) -> str:
         if value != self.UNPROVIDED_VALUE:
@@ -543,8 +550,34 @@ DT_FMT = {
     "%c": "*",
     "%x": "*",
     "%X": "*",
-    "%%": "?",
+    # a literal '%'; the loops above never see it, as specs are split on it first
+    "%%": "%",
 }
+
+
+def _regex_datetime_directives(format_spec: str) -> str:
+    """Replace strftime directives with regular expressions matching them."""
+    for fmt_key, fmt_val in DT_FMT.items():
+        count = fmt_val.count("?")
+        # either a series of numbers or letters/numbers
+        regex = r"\d{{{:d}}}".format(count) if count else r"[^ \t\n\r\f\v\-_:]+"
+        format_spec = format_spec.replace(fmt_key, regex)
+    return format_spec
+
+
+def _glob_datetime_directives(format_spec: str) -> str:
+    """Replace strftime directives with glob patterns matching them."""
+    for fmt_key, fmt_val in DT_FMT.items():
+        format_spec = format_spec.replace(fmt_key, fmt_val)
+    return format_spec
+
+
+def _substitute_datetime_directives(format_spec: str, value: dt.datetime, dt_fmt: str) -> str:
+    """Replace only the directives named in ``dt_fmt`` (ex. "Ymd") with ``value``'s fields."""
+    for fmt_letter in dt_fmt:
+        fmt = "%" + fmt_letter
+        format_spec = format_spec.replace(fmt, value.strftime(fmt))
+    return format_spec
 
 
 class GlobifyFormatter(string.Formatter):
@@ -566,18 +599,18 @@ class GlobifyFormatter(string.Formatter):
             # specified with a tuple/list of 2 elements
             # (value, partial format string)
             value, dt_fmt = value
-            for fmt_letter in dt_fmt:
-                fmt = "%" + fmt_letter
-                format_spec = format_spec.replace(fmt, value.strftime(fmt))
+            # NOTE: the result is still a format spec, so the escapes are kept
+            format_spec = _apply_between_percent_escapes(
+                format_spec,
+                lambda chunk: _substitute_datetime_directives(chunk, value, dt_fmt),
+                join="%%",
+            )
 
         # Replace format spec with glob patterns (*, ?, etc)
         if not format_spec:
             return "*"
         if "%" in format_spec:
-            replace_str = format_spec
-            for fmt_key, fmt_val in DT_FMT.items():
-                replace_str = replace_str.replace(fmt_key, fmt_val)
-            return replace_str
+            return _apply_between_percent_escapes(format_spec, _glob_datetime_directives)
         if not re.search("[0-9]+", format_spec):
             # non-integer type
             return "*"
