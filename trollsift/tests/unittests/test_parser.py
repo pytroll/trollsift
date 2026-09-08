@@ -667,3 +667,40 @@ def test_parse_padded_field_without_a_width(string, expected):
     so the value can come back as an empty string and must not be indexed into.
     """
     assert parse("a{foo:*=d}b", string) == {"foo": expected}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string"),
+    [
+        ("{t:%Y%%m%d}", "2024%m04"),
+        ("{t:%Y%%m}", "2024%m"),
+        ("{t:%Y%%}", "2024%"),
+        ("{t:%%%Y}", "%2024"),
+        ("{t:%Y%%%%%m}", "2024%%03"),
+        ("{t:%d%%%m%%%Y}", "04%03%2024"),
+    ],
+)
+def test_parse_literal_percent_in_datetime(fmt, string):
+    """Check that a "%%" in a datetime spec is a literal percent, not a directive."""
+    spec = fmt[3:-1]
+    assert compose(fmt, {"t": dt.datetime(2024, 3, 4)}) == string
+    assert parse(fmt, string) == {"t": dt.datetime.strptime(string, spec)}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "keyvals", "expected"),
+    [
+        ("{t:%Y%%m%d}", None, "????%m??"),
+        ("{t:%Y%%}", None, "????%"),
+        ("{t:%%%Y}", None, "%????"),
+        ("{t:%Y%%%%%m}", None, "????%%??"),
+        # only the directives named in the tuple are filled in, and "m" names
+        # none here -- the "m" in the spec follows a literal percent
+        ("{t:%Y%%m%d}", {"t": (dt.datetime(2024, 3, 4), "m")}, "????%m??"),
+        ("{t:%Y%%m%d}", {"t": (dt.datetime(2024, 3, 4), "Y")}, "2024%m??"),
+        ("{t:%Y%%m%d}", {"t": dt.datetime(2024, 3, 4)}, "2024%m04"),
+    ],
+)
+def test_globify_literal_percent_in_datetime(fmt, keyvals, expected):
+    """Check that a "%%" in a datetime spec globs as a literal percent."""
+    assert globify(fmt, keyvals) == expected
