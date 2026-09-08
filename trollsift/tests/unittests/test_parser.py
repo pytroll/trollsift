@@ -570,3 +570,38 @@ class TestParserFixedPoint:
 )
 def test_parse_integers(fmt, string, expected):
     assert parse(fmt, string)["foo"] == expected
+
+
+@pytest.mark.parametrize(
+    ("fmt", "value", "string"),
+    [
+        ("{foo:d>5s}", "ab", "dddab"),
+        ("{foo:f>4s}", "ab", "ffab"),
+        ("{foo:b>4s}", "ab", "bbab"),
+        ("{foo:o>4s}", "ab", "ooab"),
+        ("{foo:e>6s}", "ab", "eeeeab"),
+        ("{foo:x<3s}", "ab", "abx"),
+        ("{foo:g<4s}", "ab", "abgg"),
+    ],
+)
+def test_parse_fill_character_that_looks_like_a_type(fmt, value, string):
+    """Check that a fill character that is also a type letter isn't converted as that type."""
+    assert compose(fmt, {"foo": value}) == string
+    assert parse(fmt, string) == {"foo": value}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string", "expected"),
+    [
+        ("{foo:f}", "1.5", 1.5),
+        ("{foo:e}", "1.5e+05", 150000.0),
+        ("{foo:E}", "1.5E+05", 150000.0),
+        ("{foo:g}", "1.5", 1.5),
+        ("{foo:5.2f}", "123.45", 123.45),
+    ],
+)
+def test_parse_floats(fmt, string, expected):
+    """Check that fixed point types are converted to floats."""
+    result = parse(fmt, string)["foo"]
+    assert isinstance(result, float)
+    assert result == expected
