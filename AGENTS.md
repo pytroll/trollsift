@@ -32,9 +32,14 @@ Four pipelines, all in `parser.py`:
 - **Globify** — `globify()` → `GlobifyFormatter` singleton → the `DT_FMT` table maps
   strftime directives to `?`/`*` runs.
 
-`DT_FMT` is **shared** between globify and parse: `GlobifyFormatter` uses its `?`/`*` values
-directly, while `_regex_datetime()` derives `\d{N}` from `count("?")`. Editing `DT_FMT`
-changes both directions at once.
+`DT_FMT` is **shared** between globify and parse: `_glob_datetime_directives()` uses its
+`?`/`*` values directly, while `_regex_datetime_directives()` derives `\d{N}` from
+`count("?")`. Editing `DT_FMT` changes both directions at once. Its `"%%"` entry is
+documentation only — every consumer first splits the spec on `%%` via
+`_apply_between_percent_escapes()`, so a directive replacement can never straddle a literal
+percent. That helper's `join` argument matters: the regex and glob passes rejoin with `%`
+because their output is finished, but globify's partial-datetime pass rejoins with `%%`
+because its output is still a format spec that gets a second pass.
 
 ## Invariants — do not break these
 
@@ -52,11 +57,18 @@ These are load-bearing for downstream projects. Changing any of them is a breaki
   `fnmatch.fnmatch`, `glob.iglob`, *and* `fsspec`'s `fs.glob`. Emitting character classes
   like `[0-9]` would work with `glob` but silently change `fnmatch` and `fsspec` semantics.
 - **Type coercion on parse is API**: `:d` → `int`, `:x`/`:X` → base-16 `int`, `:o` → base-8,
-  `:b` → base-2, `f`/`e`/`E`/`g` → `float`, and any `%` spec → `datetime.datetime`.
+  `:b` → base-2, `f`/`e`/`E`/`g` → `float`, and any `%` spec → `datetime.datetime`. `_convert`
+  dispatches on the *parsed* type letter (`int_bases`, `fixed_point_types`), never on a
+  substring of the whole spec — otherwise a fill character misroutes it (`{foo:d>5s}` is a
+  string field, not an int).
 - **Padding/fill semantics** (`_strip_padding`, `_get_fill`) back hundreds of real patterns
   such as `{x:_<6s}` and `{x:>04d}`. A width+fill spec deliberately degrades the regex to
   `.{width}` and the fill is stripped afterwards during conversion. That two-step dance is
-  intentional — the regex cannot tell fill characters from content.
+  intentional — the regex cannot tell fill characters from content. `_strip_padding` takes
+  the already-parsed `fmt_spec_regex` groups, not the spec string, so `parse()` matches each
+  spec once. `=` alignment puts the padding after the sign (`_strip_sign_padding`), and a
+  `0` *flag* means a zero fill (`_get_padding_char`) — but only for `>`/`=` on numbers; see
+  the rough edge below.
 - **`StringFormatter.CONV_FUNCS`** (`c h H l t u`, plus `R` handled separately) is
   user-facing: `R` removes `-`, `_`, `:` and space; `h` = R+lower, `H` = R+upper. End users
   put these in Satpy `filename=` templates. Entries may be added, never removed or redefined.
@@ -93,8 +105,8 @@ These are load-bearing for downstream projects. Changing any of them is a breaki
 - **`mypy trollsift` runs in CI and there is no mypy config anywhere** — it runs on defaults.
   This is easy to forget; run it locally before pushing.
 - **Lint**: `pre-commit run -a` (ruff + ruff-format, line length 120, Google-style
-  docstrings, **mccabe max-complexity 10**). `format_spec_to_regex` and `_convert` sit close
-  to the complexity ceiling; past commits exist purely to get back under it. pre-commit.ci
+  docstrings, **mccabe max-complexity 10**). `format_spec_to_regex` sits closest to the
+  complexity ceiling (9); past commits exist purely to get back under it. pre-commit.ci
   runs on PRs but does **not** autofix them.
 - **Test layout**: `trollsift/tests/{unittests,integrationtests,regressiontests}/test_parser.py`.
   No `conftest.py`. Older classes subclass `unittest.TestCase`; write new tests in plain
@@ -131,7 +143,11 @@ a `backwards-incompatibility` label on the PR.
 
 Already known. Don't rediscover them, and don't "fix" them as a drive-by in an unrelated PR.
 
-- The `%%` branch in `_regex_datetime` discards its `replace()` result — a no-op.
-- `_convert` type-sniffs with `in` against the whole spec, so a fill character like `d`, `x`
-  or `f` can misroute conversion (e.g. `{foo:d>5s}`).
-- `_get_fill` does not handle `=` alignment; there is a code comment saying so.
+- **Trailing zero padding is ambiguous and is deliberately not stripped.** `{foo:<05d}`
+  formats both `-12` and `-1200` as `"-1200"`; `{foo:^05d}` formats both `12` and `120` as
+  `"01200"`. There is no correct parse, so `_get_padding_char` infers a `"0"` pad from the
+  `0` flag only for the alignments that pad *before* the value (`>`, `=`), where leading
+  zeros are never significant. Note the *explicit* `0` fill spelling (`{foo:0<5d}`) does
+  strip, and so returns `-12` for `"-1200"` — long-standing behavior, left alone, and
+  inconsistent with the flag spelling on purpose. `is_one2one()` detects none of this: its
+  generated data fills the field width, so padding is never exercised.
