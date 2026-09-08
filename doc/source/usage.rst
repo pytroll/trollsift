@@ -82,3 +82,47 @@ depending on your requirements you can call,
   '/somedir/otherdir/hrpt_noaa16_20120101_0101_69022.l1b'
 
 And achieve the exact same result as in the Parse object example above.
+
+gotchas
+-------
+
+padding
+^^^^^^^
+
+Fields can be padded with the usual Python format spec, and trollsift strips that
+padding back off when parsing:
+
+  >>> from trollsift import parse, compose
+  >>> fmt = "{platform:_<8s}_{orbit:05d}"
+  >>> compose(fmt, {'platform': 'noaa16', 'orbit': 69022})
+  'noaa16___69022'
+  >>> parse(fmt, "noaa16___69022")
+  {'platform': 'noaa16', 'orbit': 69022}
+
+Padding a number with zeros on the *right* is the one case that can't be undone,
+because those zeros can't be told apart from the value's own. Both ``12`` and
+``12000`` are composed as ``"12000"`` here, so such a pattern is not invertible
+and parsing gives back the longer number:
+
+  >>> compose("{orbit:<05d}", {'orbit': 12})
+  '12000'
+  >>> parse("{orbit:<05d}", "12000")
+  {'orbit': 12000}
+
+The usual zero padding, on the left, has no such problem:
+
+  >>> compose("{orbit:05d}", {'orbit': 12})
+  '00012'
+  >>> parse("{orbit:05d}", "00012")
+  {'orbit': 12}
+
+literal percent signs
+^^^^^^^^^^^^^^^^^^^^^
+
+Inside a time field a ``%%`` means a literal percent sign, as it does in
+:meth:`~datetime.datetime.strftime`, rather than the start of a directive:
+
+  >>> compose("{time:%Y%m%d%%}", {'time': datetime(2014, 2, 10)})
+  '20140210%'
+  >>> parse("{time:%Y%m%d%%}", "20140210%")
+  {'time': datetime.datetime(2014, 2, 10, 0, 0)}

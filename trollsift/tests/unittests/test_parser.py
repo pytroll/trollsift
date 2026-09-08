@@ -570,3 +570,137 @@ class TestParserFixedPoint:
 )
 def test_parse_integers(fmt, string, expected):
     assert parse(fmt, string)["foo"] == expected
+
+
+@pytest.mark.parametrize(
+    ("fmt", "value", "string"),
+    [
+        ("{foo:d>5s}", "ab", "dddab"),
+        ("{foo:f>4s}", "ab", "ffab"),
+        ("{foo:b>4s}", "ab", "bbab"),
+        ("{foo:o>4s}", "ab", "ooab"),
+        ("{foo:e>6s}", "ab", "eeeeab"),
+        ("{foo:x<3s}", "ab", "abx"),
+        ("{foo:g<4s}", "ab", "abgg"),
+    ],
+)
+def test_parse_fill_character_that_looks_like_a_type(fmt, value, string):
+    """Check that a fill character that is also a type letter isn't converted as that type."""
+    assert compose(fmt, {"foo": value}) == string
+    assert parse(fmt, string) == {"foo": value}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string", "expected"),
+    [
+        ("{foo:f}", "1.5", 1.5),
+        ("{foo:e}", "1.5e+05", 150000.0),
+        ("{foo:E}", "1.5E+05", 150000.0),
+        ("{foo:g}", "1.5", 1.5),
+        ("{foo:5.2f}", "123.45", 123.45),
+    ],
+)
+def test_parse_floats(fmt, string, expected):
+    """Check that fixed point types are converted to floats."""
+    result = parse(fmt, string)["foo"]
+    assert isinstance(result, float)
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("fmt", "value", "string"),
+    [
+        # padding sits between the sign and the value with "=" alignment
+        ("{foo:*=5d}", 12, "***12"),
+        ("{foo:*=5d}", -12, "-**12"),
+        ("{foo:=5d}", 12, "   12"),
+        ("{foo:=5d}", -12, "-  12"),
+        ("{foo:0=5d}", -12, "-0012"),
+        ("{foo:+=5d}", 12, "+++12"),
+        ("{foo:*=5x}", 255, "***ff"),
+        ("{foo:*=8.2f}", 3.5, "****3.50"),
+        # a "0" flag pads with zeros, and ">" puts the sign after them
+        ("{foo:>04d}", -12, "0-12"),
+        ("{foo:>04d}", 0, "0000"),
+        ("{foo:>05d}", 12, "00012"),
+        ("{foo:>08.2f}", 0.5, "00000.50"),
+    ],
+)
+def test_parse_leading_padding(fmt, value, string):
+    """Check that padding placed before the value is stripped when parsing."""
+    assert compose(fmt, {"foo": value}) == string
+    assert parse(fmt, string) == {"foo": value}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string", "expected"),
+    [
+        ("{foo:<05d}", "-1200", -1200),
+        ("{foo:^05d}", "01200", 1200),
+        # an explicit "0" fill has always been stripped, even though it is
+        # just as ambiguous as the "0" flag above
+        ("{foo:0<5d}", "-1200", -12),
+    ],
+)
+def test_parse_trailing_zero_padding_is_ambiguous(fmt, string, expected):
+    """Check the parsing of trailing zeros, which can't be told from the value's own.
+
+    Both -12 and -1200 are formatted as "-1200" by ``{foo:<05d}``, so there is no
+    correct answer here. These cases only pin down what trollsift does today.
+    """
+    assert parse(fmt, string) == {"foo": expected}
+
+
+@pytest.mark.parametrize(
+    ("string", "expected"),
+    [
+        ("ab", 0),
+        ("a12b", 12),
+        ("a-12b", -12),
+        ("a+12b", 12),
+    ],
+)
+def test_parse_padded_field_without_a_width(string, expected):
+    """Check that a padded field with no width, which may match nothing, is parsed.
+
+    A spec with an alignment but no width places no limit on how much it matches,
+    so the value can come back as an empty string and must not be indexed into.
+    """
+    assert parse("a{foo:*=d}b", string) == {"foo": expected}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string"),
+    [
+        ("{t:%Y%%m%d}", "2024%m04"),
+        ("{t:%Y%%m}", "2024%m"),
+        ("{t:%Y%%}", "2024%"),
+        ("{t:%%%Y}", "%2024"),
+        ("{t:%Y%%%%%m}", "2024%%03"),
+        ("{t:%d%%%m%%%Y}", "04%03%2024"),
+    ],
+)
+def test_parse_literal_percent_in_datetime(fmt, string):
+    """Check that a "%%" in a datetime spec is a literal percent, not a directive."""
+    spec = fmt[3:-1]
+    assert compose(fmt, {"t": dt.datetime(2024, 3, 4)}) == string
+    assert parse(fmt, string) == {"t": dt.datetime.strptime(string, spec)}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "keyvals", "expected"),
+    [
+        ("{t:%Y%%m%d}", None, "????%m??"),
+        ("{t:%Y%%}", None, "????%"),
+        ("{t:%%%Y}", None, "%????"),
+        ("{t:%Y%%%%%m}", None, "????%%??"),
+        # only the directives named in the tuple are filled in, and "m" names
+        # none here -- the "m" in the spec follows a literal percent
+        ("{t:%Y%%m%d}", {"t": (dt.datetime(2024, 3, 4), "m")}, "????%m??"),
+        ("{t:%Y%%m%d}", {"t": (dt.datetime(2024, 3, 4), "Y")}, "2024%m??"),
+        ("{t:%Y%%m%d}", {"t": dt.datetime(2024, 3, 4)}, "2024%m04"),
+    ],
+)
+def test_globify_literal_percent_in_datetime(fmt, keyvals, expected):
+    """Check that a "%%" in a datetime spec globs as a literal percent."""
+    assert globify(fmt, keyvals) == expected
