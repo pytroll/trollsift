@@ -605,3 +605,65 @@ def test_parse_floats(fmt, string, expected):
     result = parse(fmt, string)["foo"]
     assert isinstance(result, float)
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("fmt", "value", "string"),
+    [
+        # padding sits between the sign and the value with "=" alignment
+        ("{foo:*=5d}", 12, "***12"),
+        ("{foo:*=5d}", -12, "-**12"),
+        ("{foo:=5d}", 12, "   12"),
+        ("{foo:=5d}", -12, "-  12"),
+        ("{foo:0=5d}", -12, "-0012"),
+        ("{foo:+=5d}", 12, "+++12"),
+        ("{foo:*=5x}", 255, "***ff"),
+        ("{foo:*=8.2f}", 3.5, "****3.50"),
+        # a "0" flag pads with zeros, and ">" puts the sign after them
+        ("{foo:>04d}", -12, "0-12"),
+        ("{foo:>04d}", 0, "0000"),
+        ("{foo:>05d}", 12, "00012"),
+        ("{foo:>08.2f}", 0.5, "00000.50"),
+    ],
+)
+def test_parse_leading_padding(fmt, value, string):
+    """Check that padding placed before the value is stripped when parsing."""
+    assert compose(fmt, {"foo": value}) == string
+    assert parse(fmt, string) == {"foo": value}
+
+
+@pytest.mark.parametrize(
+    ("fmt", "string", "expected"),
+    [
+        ("{foo:<05d}", "-1200", -1200),
+        ("{foo:^05d}", "01200", 1200),
+        # an explicit "0" fill has always been stripped, even though it is
+        # just as ambiguous as the "0" flag above
+        ("{foo:0<5d}", "-1200", -12),
+    ],
+)
+def test_parse_trailing_zero_padding_is_ambiguous(fmt, string, expected):
+    """Check the parsing of trailing zeros, which can't be told from the value's own.
+
+    Both -12 and -1200 are formatted as "-1200" by ``{foo:<05d}``, so there is no
+    correct answer here. These cases only pin down what trollsift does today.
+    """
+    assert parse(fmt, string) == {"foo": expected}
+
+
+@pytest.mark.parametrize(
+    ("string", "expected"),
+    [
+        ("ab", 0),
+        ("a12b", 12),
+        ("a-12b", -12),
+        ("a+12b", 12),
+    ],
+)
+def test_parse_padded_field_without_a_width(string, expected):
+    """Check that a padded field with no width, which may match nothing, is parsed.
+
+    A spec with an alignment but no width places no limit on how much it matches,
+    so the value can come back as an empty string and must not be indexed into.
+    """
+    assert parse("a{foo:*=d}b", string) == {"foo": expected}
