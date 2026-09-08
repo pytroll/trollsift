@@ -164,6 +164,8 @@ allow_multiple = ["b", "c", "d", "o", "s", "", "x", "X"]
 fixed_point_types = ["f", "e", "E", "g"]
 # integer types and the base they are written in
 int_bases = {"d": 10, "x": 16, "X": 16, "o": 8, "b": 2}
+# alignments that put the padding before the value
+leading_pad_aligns = (">", "=")
 # format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
 # https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 fmt_spec_regex = re.compile(
@@ -348,7 +350,6 @@ def format_spec_to_regex(field_name: str, format_spec: str) -> str:
 
 
 def _get_fill(fill: str | None, width: str | None, ftype: str | None) -> str | None:
-    # NOTE: does not properly handle `=` alignment
     if fill is None:
         if width is not None and width[0] == "0":
             fill = "0"
@@ -428,19 +429,44 @@ def _strip_padding(match_dict: Mapping[str, str | None], stri: str) -> str:
         stri: String to be modified
     """
     align = match_dict.get("align")
-    pad = match_dict.get("fill")
     if align:
         # align character is the last one
         align = align[-1]
-    if align and align in "<>^" and not pad:
-        pad = " "
+    pad = _get_padding_char(match_dict, align)
     if align == ">":
         stri = stri.lstrip(pad)
     elif align == "<":
         stri = stri.rstrip(pad)
     elif align == "^":
         stri = stri.strip(pad)
+    elif align == "=":
+        stri = _strip_sign_padding(stri, pad)
     return stri
+
+
+def _get_padding_char(match_dict: Mapping[str, str | None], align: str | None) -> str | None:
+    """Get the character a value was padded with, or None if it wasn't padded.
+
+    A '0' *flag* (``{foo:>04d}``, as opposed to a '0' *fill* like ``{foo:0>4d}``)
+    pads numbers with zeros. It is only honored for the alignments that pad before
+    the value, and only for numbers: a trailing zero is significant, so stripping
+    it can't be undone (``{foo:<05d}`` formats both -12 and -1200 as "-1200").
+    """
+    pad = match_dict.get("fill")
+    if pad is None and align:
+        zero_padded = (
+            match_dict.get("zero") and align in leading_pad_aligns and match_dict.get("type") not in ("s", "", None)
+        )
+        pad = "0" if zero_padded else " "
+    return pad
+
+
+def _strip_sign_padding(stri: str, pad: str | None) -> str:
+    """Strip '='-aligned padding, which sits between the sign and the value."""
+    if stri[:1] in ("+", "-"):
+        # NOTE: a slice, as the value may be an empty string (ex. "{foo:*=d}")
+        return stri[0] + stri[1:].lstrip(pad)
+    return stri.lstrip(pad)
 
 
 @lru_cache()
