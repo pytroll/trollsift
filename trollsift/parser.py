@@ -162,6 +162,8 @@ spec_regexes["X"] = spec_regexes["x"]
 spec_regexes[""] = spec_regexes["s"]
 allow_multiple = ["b", "c", "d", "o", "s", "", "x", "X"]
 fixed_point_types = ["f", "e", "E", "g"]
+# integer types and the base they are written in
+int_bases = {"d": 10, "x": 16, "X": 16, "o": 8, "b": 2}
 # format_spec ::=  [[fill]align][sign][#][0][width][,][.precision][type]
 # https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 fmt_spec_regex = re.compile(
@@ -402,32 +404,29 @@ def _convert(convdef: str, stri: str) -> Any:
     """Convert the string *stri* to the given conversion definition *convdef*."""
     result: Any  # force mypy type
     if "%" in convdef:
-        result = dt.datetime.strptime(stri, convdef)
-    else:
-        result = _strip_padding(convdef, stri)
-        if "d" in convdef:
-            result = int(result)
-        elif "x" in convdef or "X" in convdef:
-            result = int(result, 16)
-        elif "o" in convdef:
-            result = int(result, 8)
-        elif "b" in convdef:
-            result = int(result, 2)
-        elif any(float_type_marker in convdef for float_type_marker in fixed_point_types):
-            result = float(result)
-
+        return dt.datetime.strptime(stri, convdef)
+    # NOTE: check the parsed type, not the whole spec, so a fill character
+    # that happens to be a type letter (ex. "{foo:d>5s}") isn't mistaken for one
+    spec_match = fmt_spec_regex.match(convdef)
+    match_dict = spec_match.groupdict() if spec_match else {}
+    result = _strip_padding(match_dict, stri)
+    ftype = match_dict.get("type")
+    if ftype in int_bases:
+        # a field that was all padding held a zero
+        result = int(result or "0", int_bases[ftype])
+    elif ftype in fixed_point_types:
+        result = float(result)
     return result
 
 
-def _strip_padding(convdef: str, stri: str) -> str:
+def _strip_padding(match_dict: Mapping[str, str | None], stri: str) -> str:
     """Strip padding from the given string.
 
     Args:
-        convdef: Conversion definition (indicates the padding)
+        match_dict: ``fmt_spec_regex`` groups of the conversion definition
+            (indicates the padding)
         stri: String to be modified
     """
-    regex_match = fmt_spec_regex.match(convdef)
-    match_dict = regex_match.groupdict() if regex_match else {}
     align = match_dict.get("align")
     pad = match_dict.get("fill")
     if align:
