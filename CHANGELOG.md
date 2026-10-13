@@ -1,3 +1,14 @@
+## Version 1.0.2 (2026/10/13)
+
+### Pull Requests Merged
+
+#### Bugs fixed
+
+* [PR 110](https://github.com/pytroll/trollsift/pull/110) - Fix edge cases in conversions, padding, and percent literals
+
+In this release 1 pull request was closed.
+
+
 ## Version 1.0.1 (2026/06/01)
 
 ### Pull Requests Merged
